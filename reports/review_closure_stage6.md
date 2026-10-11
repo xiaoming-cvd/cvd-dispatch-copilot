@@ -1,6 +1,9 @@
 # 第六阶段审查逐项关闭表（2026-10-11）
 
-对照《第六阶段审查与跨电脑 AI 改进建议》逐项修复与证据位置。
+对照《第六阶段审查与跨电脑 AI 改进建议》与《第六阶段二次复审与跨电脑 AI
+改进建议》逐项修复与证据位置。二次复审新增关闭项见文末第二节。
+
+## 第一节：首轮审查（八项）
 
 ## P0-1 冻结清单与评测分母不一致 —— 已修复
 
@@ -93,7 +96,58 @@
   单独成表，不碰 test、不并入 60s 主比较。
 - 进程级硬截止：列为下一版工作。
 
-## 测试
+## 第二节：二次复审（必须修复三项 + 验收六条）
 
-- 全量 `329 passed, 158 warnings`（新增 2 条：summary 上限核验断言、
-  固定池完整性与语义断言）。
+### 一 成本上限字段与数据矛盾 —— 已修复
+
+- `summary.csv` 导出机器可读布尔 `within_cap`（TRUE/FALSE），并保留
+  `cap_verdict` 一致性列；无解行写空（null），不写 ok。
+- 结果：60 条有数值 LD 记录中 6 条超限全部 FALSE（solver_status=
+  no_candidate_within_cost_cap）；**冻结主配置 cap=1.10 超限 0 条**；
+  测试集 15/15"可行"即 within_cap=TRUE。
+- 断言（tests/test_evaluation6.py::test_within_cap_boolean_semantics）：
+  由 raw 重算，有数值时标记必须等于 cost ≤ cap × reference；并复验 CSV
+  数值与 raw 一致（验收④）。
+
+### 二 冻结与复现证据链 —— 如实降级并补件
+
+- 报告首页与 `frozen_inputs.json` 显式标注 **"事后归档校验"**（草稿哈希
+  开跑后补记，时间差约 2 小时 23 分），并声明下一轮将开跑前把 SHA-256
+  写入不可变 manifest 再跑（验收⑥）。
+- 补件：39 份场景草稿 + 三个运行/重建脚本 + `requirements_lock.txt`
+  （pip freeze 全量锁定）+ 源码提交号随包交付；`frozen_inputs.json` 含
+  每场景草稿 SHA-256/种子/锁比例/依赖版本。
+- 测试：`test_freezing_provenance_disclosed`。
+
+### 三 报告文字/元数据错误 —— 已修复
+
+- 配对比较"insert×rebuild 仅 5 个"改为程序计数（实测 2 个），不再写死。
+- 不可行证明段：字段映射修正（按行 `status` 取 proven_infeasible），
+  正确显示求解器版本 stage2-copt-8.0.6；措辞改为"COPT 对当前 MIP 模型
+  报告 MIP_INFEASIBLE"，不扩展为原始业务问题不可行。
+- OR-Tools 重排行版本误标根因在 `pipeline._solver_version`（rebuild 恒写
+  COPT 版本）：已改为按实际后端记录（COPT→stage2-copt-8.0.6，
+  OR-Tools→stage2-ortools-9.14.6206），新增 `backend` 参数贯穿
+  `_assemble`；既有 raw 不改（不美化历史），新运行生效。
+- 附带修复：Windows 下任务元数据原子替换偶发 PermissionError 导致 worker
+  卡死（jobs._write_meta 加重试），全量 332 passed。
+
+### 验收六条对照
+
+①39=39=39：test_summary_covers_all_manifest_scenarios ✅
+②test 口径 4/16、5/16、15/16：test_testset_main_rates_unchanged ✅
+③60 条 6 条 FALSE、cap1.10 超限 0：test_within_cap_boolean_semantics ✅
+④CSV 可由 raw 重导出：该测试内逐行由 raw 重算比对 ✅
+⑤配对数/版本字段/越界行程序生成：paired() 与 proof/overrun 均为程序计算 ✅
+⑥事后归档声明：test_freezing_provenance_disclosed ✅
+
+### 下一轮增强（不在本轮修补范围，已列入后续工作）
+
+- 每方法独立进程硬截止后再称"严格 60 秒同预算"；
+- 8 个物化失败场景的构造器诊断（方法/incumbent/失败类型/耗时）与预注册复测；
+- 宣传语收敛：优势表述限定为"在特定数据族中找到可行且少扰动方案"。
+
+## 测试（第二轮）
+
+- 全量 `332 passed, 158 warnings`（新增 3 条验收测试：布尔上限语义、
+  事后归档声明、test 口径回归）。
