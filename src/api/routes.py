@@ -12,7 +12,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from ..domain.models import Scenario, ScenarioDraft, input_hash
 from ..llm.base import LLMProviderError
@@ -41,15 +41,16 @@ class ConfirmIn(BaseModel):
 
 class BaselineIn(BaseModel):
     scenario_id: str
-    budget_ms: int = 60_000
+    budget_ms: int = Field(default=60_000, gt=0)  # 预算必须为正
+    force: bool = False  # 已有已确认版本时强制重建（显式 consent，不静默覆盖）
 
 
 class SolveIn(BaseModel):
     scenario_id: str
     method: str  # insert | rebuild | low_disruption
     backend: str | None = None  # 仅 rebuild：ortools（默认）| copt，显式记录
-    budget_ms: int = 60_000
-    base_version: int | None = None  # 可选乐观锁
+    budget_ms: int = Field(default=60_000, gt=0)  # 预算必须为正
+    base_version: int | None = None  # 可选乐观锁（对当前活动版本）
 
 
 METHODS = ("insert", "rebuild", "low_disruption")
@@ -90,21 +91,52 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
         return scn
 
     def handle_baseline(payload: dict) -> dict:
-        scn = _materialize(payload["scenario_id"], int(payload["budget_ms"]))
+        requested = int(payload["budget_ms"])
+        t0 = time.monotonic()
+        scn = _materialize(payload["scenario_id"], requested)
+        materialize_ms = int((time.monotonic() - t0) * 1000)
+        warnings: list[str] = []
+        # 强制重建：版本单调递增 + 显式警告（已确认锁不保留，须重新确认）
+        prev_version = int(payload.get("prev_version") or 0)
+        if payload.get("force") and prev_version > 0:
+            scn = scn.model_copy(update={"version": prev_version + 1})
+            index.save_materialized(scn)
+            warnings.append(
+                "baseline 已强制重建：此前已确认版本 v"
+                f"{prev_version} 的锁定不保留，请重新确认约束")
+        total = int((time.monotonic() - t0) * 1000)
         return {"scenario_id": scn.scenario_id, "version": scn.version,
-                "input_hash": input_hash(scn), "n_routes": len(scn.original_plan.routes)}
+                "input_hash": input_hash(scn),
+                "n_routes": len(scn.original_plan.routes),
+                "requested_budget_ms": requested,
+                "materialize_ms": materialize_ms,
+                "total_elapsed_ms": total,
+                "timed_out": total > requested,
+                "warnings": warnings}
 
     def handle_solve(payload: dict) -> dict:
-        budget = int(payload["budget_ms"])
+        requested = int(payload["budget_ms"])
         t0 = time.monotonic()
         scenario_id = payload["scenario_id"]
+        materialize_ms = 0
         try:
             scn = index.load_scenario(scenario_id)
         except HTTPException:
             # 未物化：先用预算的一部分物化，剩余给求解（端到端预算硬约束）
-            mat_budget = max(1000, min(20_000, budget // 3))
+            mat_budget = max(1000, min(20_000, requested // 3))
+            t_mat = time.monotonic()
             scn = _materialize(scenario_id, mat_budget)
-        remaining = budget - int((time.monotonic() - t0) * 1000)
+            materialize_ms = int((time.monotonic() - t_mat) * 1000)
+        # 提交时绑定了版本快照：执行前核对，漂移则失败（不静默求解新版本）
+        bind_version = payload.get("bind_version")
+        bind_hash = payload.get("bind_hash")
+        if bind_version is not None and (
+                scn.version != bind_version
+                or (bind_hash and input_hash(scn) != bind_hash)):
+            raise ValueError(
+                f"E_VERSION_CONFLICT: 提交后场景已变化（提交时 v{bind_version}，"
+                f"现为 v{scn.version}），任务失败而非静默漂移，请刷新后重试")
+        remaining = requested - int((time.monotonic() - t0) * 1000)
         if remaining < 1000:
             raise ValueError(
                 f"E_BUDGET: 物化后剩余预算 {remaining}ms 不足 1000ms，"
@@ -113,6 +145,7 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
         outcome = pipeline.solve(scn, method, remaining,
                                  backend=payload.get("backend"))
         result = outcome.result
+        total = int((time.monotonic() - t0) * 1000)
         row = {
             "scenario_id": scenario_id,
             "scenario_version": scn.version,
@@ -123,7 +156,15 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                 else None),
             "backend_requested": result.metrics.get("backend_requested")
             or payload.get("backend"),
-            "budget_ms": remaining,
+            # 预算口径：请求预算 / 物化后有效预算 / 分项耗时 / 端到端总耗时
+            "requested_budget_ms": requested,
+            "budget_ms": remaining,  # = effective_budget_ms（兼容旧字段）
+            "effective_budget_ms": remaining,
+            "materialize_ms": materialize_ms,
+            "solve_ms": result.elapsed_ms,
+            "validate_ms": result.metrics.get("elapsed_validate_ms"),
+            "total_elapsed_ms": total,
+            "timed_out": total > requested,
             "has_solution": bool(result.routes),
             "result": result.model_dump(mode="json"),
         }
@@ -206,8 +247,19 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
 
     @router.post("/scenarios/upload")
     async def upload(request: Request):
+        # 流式累计限额：无 Content-Length 的分块请求也在上限处 413，
+        # 不会一次性读入内存（阶段5审查 P1-3）
+        size = 0
+        chunks: list[bytes] = []
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > settings.max_upload_bytes:
+                raise HTTPException(
+                    413, f"E_TOO_LARGE: 请求体超过上限 "
+                         f"{settings.max_upload_bytes} 字节")
+            chunks.append(chunk)
         try:
-            doc = json.loads((await request.body()).decode("utf-8"))
+            doc = json.loads(b"".join(chunks).decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise HTTPException(422, f"E_UPLOAD_INVALID: 不是合法 JSON：{exc}")
         if not isinstance(doc, dict) or "draft" not in doc:
@@ -250,10 +302,26 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
     @router.post("/baseline")
     def baseline(body: BaselineIn):
         index.load_doc(body.scenario_id)  # 404 早失败
+        # 已有已确认版本（v>1）时禁止无提示重建；显式 force=true 才允许
+        prev_version = 0
+        mat_path = settings.materialized_dir / f"{body.scenario_id}.json"
+        if mat_path.is_file():
+            try:
+                prev_version = Scenario(
+                    **json.loads(mat_path.read_text(encoding="utf-8"))).version
+            except (OSError, json.JSONDecodeError, ValidationError):
+                prev_version = 0
+        if prev_version > 1 and not body.force:
+            raise HTTPException(
+                409,
+                f"E_VERSION_CONFLICT: 已有已确认版本 v{prev_version}，重跑 baseline "
+                "将丢失已确认约束；如确需重建请显式 force=true（版本单调递增并"
+                "附警告）")
         try:
             job = queue.submit("baseline", {
                 "scenario_id": body.scenario_id,
-                "budget_ms": min(body.budget_ms, settings.default_budget_ms)})
+                "budget_ms": min(body.budget_ms, settings.default_budget_ms),
+                "force": body.force, "prev_version": prev_version})
         except OverflowError as exc:
             raise HTTPException(429, str(exc))
         return {"job_id": job.job_id, "status": job.status}
@@ -316,12 +384,9 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
             code = 409 if "E_DRAFT_ALREADY_CONFIRMED" in msg \
                 or "E_DRAFT_BASE_MISMATCH" in msg else 422
             raise HTTPException(code, msg)
-        # 新版本落盘：versions/<sid>/v<n>.json，solve/history 可读
-        vdir = settings.materialized_dir.parent / "versions" / scn.scenario_id
-        vdir.mkdir(parents=True, exist_ok=True)
-        (vdir / f"v{out.scenario.version}.json").write_text(
-            json.dumps(out.scenario.model_dump(mode="json"),
-                       ensure_ascii=False, indent=1), encoding="utf-8")
+        # 新版本原子落盘：versions/<sid>/v<n>.json 留档 + 活动指针切换到 vN
+        # （不切换的话确认返回 v2、求解却仍用 v1 旧锁——阶段5审查 P0-1）
+        index.save_version(out.scenario)
         return {"status": "confirmed",
                 "demo_mode": out.bundle.demo_mode,
                 "bundle": out.bundle.model_dump(mode="json"),
@@ -339,19 +404,34 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
         if body.method != "rebuild" and body.backend is not None:
             raise HTTPException(422, "E_BACKEND: backend 仅 rebuild 方法可指定")
         doc = index.load_doc(body.scenario_id)  # 404 早失败
-        if body.base_version is not None:
-            current = doc["draft"].get("version", 1)
-            if body.base_version != current:
+        # 乐观锁与快照绑定都针对"当前活动版本"，不是原始 draft.version
+        # （draft 恒为 v1，确认后活动版本已是 v2——阶段5审查 P0-1/P1-2）
+        bind_version = bind_hash = None
+        try:
+            current = index.load_scenario(body.scenario_id)
+            bind_version, bind_hash = current.version, input_hash(current)
+        except HTTPException:
+            current_version = doc["draft"].get("version", 1)
+            if body.base_version is not None \
+                    and body.base_version != current_version:
                 raise HTTPException(
-                    409, f"E_VERSION_CONFLICT: 草稿版本已变化（当前 v{current}）")
+                    409, f"E_VERSION_CONFLICT: 草稿版本已变化（当前 v{current_version}）")
+        else:
+            if body.base_version is not None \
+                    and body.base_version != bind_version:
+                raise HTTPException(
+                    409, f"E_VERSION_CONFLICT: 场景已是 v{bind_version}，"
+                         f"请求基于 v{body.base_version}，请刷新后重试")
         try:
             job = queue.submit("solve", {
                 "scenario_id": body.scenario_id, "method": body.method,
                 "backend": (body.backend.lower() if body.backend else None),
-                "budget_ms": min(body.budget_ms, settings.default_budget_ms)})
+                "budget_ms": min(body.budget_ms, settings.default_budget_ms),
+                "bind_version": bind_version, "bind_hash": bind_hash})
         except OverflowError as exc:
             raise HTTPException(429, str(exc))
-        return {"job_id": job.job_id, "status": job.status}
+        return {"job_id": job.job_id, "status": job.status,
+                "bound_version": bind_version}
 
     @router.get("/jobs")
     def jobs():
@@ -373,32 +453,65 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                                      f"{'，' + meta['error'] if meta.get('error') else ''}")
         return queue.result(job_id)
 
+    def _executability(row: dict) -> tuple[bool, str]:
+        """可执行判定：可行状态 + 非空方案 + 独立校验通过 + 快照哈希匹配。
+
+        返回 (是否可执行, 不可执行原因)。诊断结果可以查看/下载 JSON，
+        但不可执行结果禁止导出执行 CSV（阶段5审查 P0-2）。
+        """
+        result = row.get("result") or {}
+        if result.get("status") != "feasible":
+            return False, f"求解状态 {result.get('status')}（非 FEASIBLE）"
+        if not row.get("has_solution") or not result.get("routes"):
+            return False, "方案为空（未找到可行解）"
+        if not (result.get("validation") or {}).get("independent_ok"):
+            return False, "未通过独立校验"
+        snap = index.load_snapshot(row.get("scenario_id"),
+                                   row.get("scenario_version"))
+        if snap is None:
+            return False, f"缺少 v{row.get('scenario_version')} 场景快照"
+        if input_hash(snap) != result.get("input_hash"):
+            return False, "结果哈希与场景快照不匹配（版本已漂移）"
+        return True, ""
+
     @router.get("/jobs/{job_id}/result.json")
     def job_result(job_id: str):
         row = _finished_result(job_id)
-        scn = _current_scenario(row["scenario_id"])
-        return {"job_id": job_id,
+        # 原计划摘要取自"该任务求解时"的版本快照，不随当前场景漂移
+        snap = index.load_snapshot(row.get("scenario_id"),
+                                   row.get("scenario_version"))
+        original_plan = [
+            {"vehicle_id": r.vehicle_id, "order_ids": list(r.order_ids)}
+            for r in snap.original_plan.routes] if snap else []
+        executable, reason = _executability(row)
+        body = {"job_id": job_id,
                 "version": row.get("scenario_version"),
                 "input_hash": row.get("scenario_input_hash"),
                 "method": row.get("method"), "backend": row.get("backend"),
                 "backend_requested": row.get("backend_requested"),
                 "budget_ms": row.get("budget_ms"),
+                "requested_budget_ms": row.get("requested_budget_ms"),
+                "total_elapsed_ms": row.get("total_elapsed_ms"),
+                "timed_out": row.get("timed_out"),
                 "has_solution": row.get("has_solution"),
-                "original_plan": [
-                    {"vehicle_id": r.vehicle_id, "order_ids": list(r.order_ids)}
-                    for r in scn.original_plan.routes],
+                "executable": executable,
+                "original_plan": original_plan,
                 "result": row.get("result")}
+        if not executable:
+            body["notice"] = ("诊断原始结果，不可执行：" + reason
+                              + "。禁止据此安排配送。")
+        return body
 
     @router.get("/jobs/{job_id}/export.csv")
     def job_export_csv(job_id: str):
         row = _finished_result(job_id)
-        result = row["result"]
-        validation = result.get("validation") or {}
-        if not validation.get("independent_ok"):
+        executable, reason = _executability(row)
+        if not executable:
             raise HTTPException(
-                403, "E_EXPORT_FORBIDDEN: 方案未通过独立校验，禁止导出（红线）")
-        scn = _current_scenario(row["scenario_id"])
-        csv_text = "\ufeff" + build_result_csv(scn, result)
+                403, f"E_EXPORT_FORBIDDEN: 不可执行结果禁止导出（{reason}）")
+        snap = index.load_snapshot(row.get("scenario_id"),
+                                   row.get("scenario_version"))
+        csv_text = "\ufeff" + build_result_csv(snap, row["result"])
         return PlainTextResponse(
             csv_text, media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition":

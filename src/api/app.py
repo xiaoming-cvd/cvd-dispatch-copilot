@@ -131,7 +131,10 @@ class ScenarioIndex:
             raise HTTPException(404, f"E_SCENARIO_CORRUPT: {exc}") from exc
 
     def load_scenario(self, scenario_id: str) -> Scenario:
-        """已物化场景（含 original_plan）。未物化则 409。"""
+        """已物化场景（含 original_plan）。未物化则 409。
+
+        该文件即"活动版本指针"：confirm 之后原子替换为新版本，
+        solve/export 一律以它（或显式快照）为准。"""
         p = self.settings.materialized_dir / f"{scenario_id}.json"
         if not p.is_file():
             raise HTTPException(
@@ -143,9 +146,50 @@ class ScenarioIndex:
             raise HTTPException(404, f"E_SCENARIO_CORRUPT: {exc}") from exc
 
     def save_materialized(self, scn: Scenario) -> None:
-        (self.settings.materialized_dir / f"{scn.scenario_id}.json").write_text(
-            json.dumps(scn.model_dump(mode="json"), ensure_ascii=False, indent=1),
-            encoding="utf-8")
+        """原子更新活动版本指针（tmp + os.replace，不会留下半个文件），
+        同时把该版本归档到 versions/<sid>/v<n>.json——保证任意历史版本
+        的结果/导出都能取回"求解时"的快照（阶段5审查 P0-1）。"""
+        vdir = self.settings.materialized_dir.parent / "versions" / scn.scenario_id
+        self._atomic_write(vdir / f"v{scn.version}.json",
+                           json.dumps(scn.model_dump(mode="json"),
+                                      ensure_ascii=False, indent=1))
+        self._atomic_write(self.settings.materialized_dir
+                           / f"{scn.scenario_id}.json",
+                           json.dumps(scn.model_dump(mode="json"),
+                                      ensure_ascii=False, indent=1))
+
+    def save_version(self, scn: Scenario) -> None:
+        """确认新版本：归档 + 原子切换活动指针（同 save_materialized）。"""
+        self.save_materialized(scn)
+
+    def load_snapshot(self, scenario_id: str, version: int | None) -> Scenario | None:
+        """读取"某版本"的场景快照（结果/导出必须用快照，不用活动指针）。
+
+        优先 versions/<sid>/v<n>.json；若请求的就是当前活动版本则回退活动
+        指针；都找不到返回 None（调用方 409，不静默用当前版本替代）。
+        """
+        if version is not None:
+            p = (self.settings.materialized_dir.parent / "versions"
+                 / scenario_id / f"v{version}.json")
+            if p.is_file():
+                try:
+                    return Scenario(**json.loads(p.read_text(encoding="utf-8")))
+                except (OSError, json.JSONDecodeError, ValidationError):
+                    return None
+        try:
+            current = self.load_scenario(scenario_id)
+        except HTTPException:
+            return None
+        if version is None or current.version == version:
+            return current
+        return None
+
+    @staticmethod
+    def _atomic_write(path: Path, text: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.name}.tmp-{__import__('os').getpid()}")
+        tmp.write_text(text, encoding="utf-8")
+        __import__('os').replace(tmp, path)
 
 
 # ================= CSV 导出（注入防护） =================

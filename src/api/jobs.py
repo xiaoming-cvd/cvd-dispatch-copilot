@@ -63,18 +63,26 @@ class JobQueue:
         self._handlers[kind] = handler
 
     def start(self) -> None:
-        if self._thread is None:
-            self._stop = False
-            self._thread = threading.Thread(target=self._loop, daemon=True,
-                                            name="api-job-worker")
-            self._thread.start()
+        # 防重入：旧 worker 未退出时禁止启动第二个线程（阶段5审查 P1-4）
+        if self._thread is not None and self._thread.is_alive():
+            raise RuntimeError(
+                "E_QUEUE_RUNNING: 队列工作线程仍在运行，禁止重复启动")
+        self._stop = False
+        self._thread = threading.Thread(target=self._loop, daemon=True,
+                                        name="api-job-worker")
+        self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 5.0) -> bool:
+        """优雅停止。返回 True=已退出；False=超时未退出（此时保留 _thread
+        引用，start() 会拒绝重入，避免两线程并行执行同一队列）。"""
         self._stop = True
         self._wake.set()
         if self._thread is not None:
-            self._thread.join(timeout=5)
+            self._thread.join(timeout=timeout)
+            if self._thread.is_alive():
+                return False
             self._thread = None
+        return True
 
     def _mark_stale_interrupted(self) -> None:
         for p in self.jobs_dir.glob("*.json"):

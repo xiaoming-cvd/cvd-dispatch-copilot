@@ -451,11 +451,18 @@ async function loadResult(jobId) {
     kv(dl, "任务", d.job_id);
     kv(dl, "方法 / 后端（请求）", d.method + " / " + (d.backend_requested || "-"));
     kv(dl, "实际后端", d.backend || "-");
-    kv(dl, "预算 / 耗时", (d.budget_ms ?? "?") + " ms / " + (r.elapsed_ms ?? "?") + " ms");
+    kv(dl, "版本 / 请求预算", "v" + (d.version ?? "?") + " / " + (d.requested_budget_ms ?? "?") + " ms");
+    kv(dl, "有效预算 / 端到端耗时", (d.budget_ms ?? "?") + " ms / " + (d.total_elapsed_ms ?? "?") + " ms"
+        + (d.timed_out ? "（已超请求预算）" : ""));
     kv(dl, "求解状态", r.status || "?");
     kv(dl, "是否找到可行解", d.has_solution ? "是" : "否（≠证明无解，除非状态明确 INFEASIBLE）");
     kv(dl, "独立校验", (r.validation && r.validation.independent_ok)
         ? "通过" : "未通过（禁止导出）");
+    kv(dl, "可执行", d.executable ? "是（可导出执行 CSV）" : "否（诊断结果，禁止执行）");
+    if (d.notice) {
+      const warn = document.createElement("div"); warn.className = "st-err";
+      warn.textContent = d.notice; dl.appendChild(warn);
+    }
     const notice = document.createElement("div"); notice.className = "muted";
     notice.textContent = "求解器自报指标与状态仅作对照；可行性与最优性以独立校验与评测口径为准。";
     dl.appendChild(notice);
@@ -463,8 +470,10 @@ async function loadResult(jobId) {
     renderCompare(d.original_plan || [], r.routes || []);
     renderTimetable(r.schedule || []);
     $("metricsPre").textContent = JSON.stringify(m, null, 2);
-    $("exportMsg").textContent = (r.validation && r.validation.independent_ok)
-      ? "" : "未过独立校验，CSV 导出被禁止（红线）";
+    $("btnExportCsv").disabled = !d.executable;
+    $("exportMsg").textContent = d.executable
+      ? "" : "不可执行结果：CSV 导出被禁止（" + (d.notice || "原因见上") + "）";
+    $("exportMsg").className = d.executable ? "muted" : "st-err";
   } catch (e) {
     const p = document.createElement("p"); p.className = "st-err";
     p.textContent = "结果加载失败：" + e.message; card.appendChild(p);

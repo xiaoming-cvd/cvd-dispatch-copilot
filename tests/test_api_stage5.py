@@ -241,12 +241,14 @@ def test_result_404_and_pending_409(client):
 # ---------------- 超时/无解语义如实 ----------------
 
 def _canned_outcome(status: str, routes: list, validation_ok: bool):
-    from src.domain.models import SolveResult
+    from src.domain.models import SolveResult, SolveStatus
     result = SolveResult.model_construct(
         input_hash="h", config={"method": "insert"}, solver_version="test",
-        elapsed_ms=1234, status=status, routes=routes, schedule=[],
-        metrics={"backend": None}, diff={}, 
-        validation={"ok": validation_ok, "checks": []},
+        elapsed_ms=1234, status=SolveStatus(status.lower()), routes=routes,
+        schedule=[],
+        metrics={"backend": None}, diff={},
+        validation={"ok": validation_ok, "independent_ok": validation_ok,
+                    "checks": []},
         warnings=[], assumptions=[])
     return SimpleNamespace(result=result)
 
@@ -266,8 +268,8 @@ def test_no_feasible_recorded_honestly(app, client, monkeypatch):
     assert meta["status"] == "succeeded", meta.get("error")
     body = client.get(f"/api/jobs/{meta['job_id']}/result.json").json()
     assert body["has_solution"] is False
-    assert body["result"]["status"] == "NO_FEASIBLE_FOUND"
-    assert "INFEASIBLE" not in body["result"]["status"]
+    assert body["result"]["status"] == "no_feasible_found"
+    assert body["result"]["status"] != "proven_infeasible"  # 超时≠证明无解
 
 
 # ---------------- 导出红线 ----------------
@@ -406,3 +408,259 @@ def test_jobs_endpoints_404(client):
 def test_history_empty_scenario(client):
     r = client.get("/api/scenarios/t-none/history")
     assert r.status_code == 404
+
+
+# ================= 阶段5审查回归（P0/P1，2026-10-11） =================
+
+def _confirm_lock(client, app, sid: str) -> dict:
+    """baseline → 草案(o1 不换车) → 显式全部接受，返回 confirm 响应体。"""
+    meta, _ = submit_and_wait(client, app, "/api/baseline",
+                              {"scenario_id": sid, "budget_ms": 20000})
+    assert meta["status"] == "succeeded", meta.get("error")
+    r = client.post("/api/constraints/draft",
+                    json={"scenario_id": sid, "text": "o1 不换车"})
+    assert r.status_code == 200, r.text
+    did = r.json()["draft"]["draft_id"]
+    r = client.post(f"/api/constraints/{did}/confirm",
+                    json={"scenario_id": sid, "base_version": 1,
+                          "accept_all": True})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+# ---------- P0-1：确认版本必须成为当前求解场景 ----------
+
+def test_confirm_becomes_active_version(app, client):
+    upload(client, "t-p0-001")
+    body = _confirm_lock(client, app, "t-p0-001")
+    assert body["scenario_version"] == 2
+
+    # 活动指针已是 v2：详情可见
+    d = client.get("/api/scenarios/t-p0-001").json()
+    assert d["materialized"] is True and d["version"] == 2
+
+    # solve 绑定 v2 成功，结果版本/哈希对应 v2
+    meta, row = submit_and_wait(client, app, "/api/solve",
+                                {"scenario_id": "t-p0-001", "method": "insert",
+                                 "budget_ms": 20000, "base_version": 2})
+    assert meta["status"] == "succeeded", meta.get("error")
+    assert row["scenario_version"] == 2
+    r = client.get(f"/api/jobs/{meta['job_id']}/result.json").json()
+    assert r["version"] == 2 and r["executable"] is True
+
+    # 提交旧 v1 → 409
+    r = client.post("/api/solve", json={"scenario_id": "t-p0-001",
+                                        "method": "insert", "base_version": 1})
+    assert r.status_code == 409
+
+    # 导出使用 v2 快照
+    csv_r = client.get(f"/api/jobs/{meta['job_id']}/export.csv")
+    assert csv_r.status_code == 200
+    assert "version=2" in csv_r.text
+
+
+def test_old_version_export_uses_snapshot(app, client):
+    """v1 任务在确认 v2 之后导出，仍显示其原始 v1 快照。"""
+    upload(client, "t-p0-002")
+    meta1, _ = submit_and_wait(client, app, "/api/baseline",
+                               {"scenario_id": "t-p0-002", "budget_ms": 20000})
+    assert meta1["status"] == "succeeded"
+    meta, row = submit_and_wait(client, app, "/api/solve",
+                                {"scenario_id": "t-p0-002", "method": "insert",
+                                 "budget_ms": 20000})
+    assert row["scenario_version"] == 1
+    _confirm_lock(client, app, "t-p0-002")  # → v2
+    csv_r = client.get(f"/api/jobs/{meta['job_id']}/export.csv")
+    assert csv_r.status_code == 200, csv_r.text
+    assert "version=1" in csv_r.text
+
+
+def test_baseline_refuses_silent_overwrite(app, client):
+    upload(client, "t-p0-003")
+    _confirm_lock(client, app, "t-p0-003")  # v2
+    r = client.post("/api/baseline", json={"scenario_id": "t-p0-003",
+                                           "budget_ms": 20000})
+    assert r.status_code == 409
+    assert "E_VERSION_CONFLICT" in r.json()["detail"]
+    # 显式 force：版本单调递增 + 警告
+    meta, res = submit_and_wait(client, app, "/api/baseline",
+                                {"scenario_id": "t-p0-003", "budget_ms": 20000,
+                                 "force": True})
+    assert meta["status"] == "succeeded", meta.get("error")
+    assert res["version"] == 3
+    assert any("锁定" in w for w in res["warnings"])
+
+
+# ---------- P0-2：无解结果禁止导出执行 CSV ----------
+
+def test_export_rejects_timeout_no_solution(app, client, monkeypatch):
+    """NO_FEASIBLE_FOUND 即使 independent_ok=true 也禁止导出。"""
+    upload(client, "t-p0-101")
+    submit_and_wait(client, app, "/api/baseline",
+                    {"scenario_id": "t-p0-101", "budget_ms": 20000})
+    monkeypatch.setattr(
+        "src.api.routes.pipeline.solve",
+        lambda scn, method, budget, **kw: _canned_outcome(
+            "NO_FEASIBLE_FOUND", [], True))
+    meta, _ = submit_and_wait(client, app, "/api/solve",
+                              {"scenario_id": "t-p0-101", "method": "insert",
+                               "budget_ms": 20000})
+    r = client.get(f"/api/jobs/{meta['job_id']}/export.csv")
+    assert r.status_code == 403
+    assert "E_EXPORT_FORBIDDEN" in r.json()["detail"]
+    # result.json 保留诊断但醒目标记不可执行
+    body = client.get(f"/api/jobs/{meta['job_id']}/result.json").json()
+    assert body["executable"] is False
+    assert "不可执行" in body["notice"]
+
+
+def test_export_rejects_proven_infeasible(app, client, monkeypatch):
+    upload(client, "t-p0-102")
+    submit_and_wait(client, app, "/api/baseline",
+                    {"scenario_id": "t-p0-102", "budget_ms": 20000})
+    monkeypatch.setattr(
+        "src.api.routes.pipeline.solve",
+        lambda scn, method, budget, **kw: _canned_outcome(
+            "PROVEN_INFEASIBLE", [], True))
+    meta, _ = submit_and_wait(client, app, "/api/solve",
+                              {"scenario_id": "t-p0-102", "method": "insert",
+                               "budget_ms": 20000})
+    r = client.get(f"/api/jobs/{meta['job_id']}/export.csv")
+    assert r.status_code == 403
+
+
+def test_export_rejects_hash_mismatch(app, client, monkeypatch):
+    """结果哈希与快照不匹配（版本漂移）禁止导出。"""
+    upload(client, "t-p0-103")
+    submit_and_wait(client, app, "/api/baseline",
+                    {"scenario_id": "t-p0-103", "budget_ms": 20000})
+    monkeypatch.setattr(
+        "src.api.routes.pipeline.solve",
+        lambda scn, method, budget, **kw: _canned_outcome(
+            "FEASIBLE", [{"vehicle_id": "V1", "order_ids": ["o1"]}], True))
+    meta, _ = submit_and_wait(client, app, "/api/solve",
+                              {"scenario_id": "t-p0-103", "method": "insert",
+                               "budget_ms": 20000})
+    r = client.get(f"/api/jobs/{meta['job_id']}/export.csv")
+    assert r.status_code == 403
+    assert "不匹配" in r.json()["detail"]
+
+
+# ---------- P1-1：预算口径 ----------
+
+def test_budget_fields_recorded(app, client):
+    upload(client, "t-p1-001")
+    submit_and_wait(client, app, "/api/baseline",
+                    {"scenario_id": "t-p1-001", "budget_ms": 20000})
+    meta, row = submit_and_wait(client, app, "/api/solve",
+                                {"scenario_id": "t-p1-001", "method": "insert",
+                                 "budget_ms": 20000})
+    assert meta["status"] == "succeeded", meta.get("error")
+    assert row["requested_budget_ms"] == 20000
+    assert row["effective_budget_ms"] == row["budget_ms"]
+    assert row["materialize_ms"] == 0  # 已物化，不重复
+    assert row["solve_ms"] == row["result"]["elapsed_ms"]
+    assert row["validate_ms"] is not None
+    assert row["total_elapsed_ms"] >= 0
+    assert row["timed_out"] is False
+    body = client.get(f"/api/jobs/{meta['job_id']}/result.json").json()
+    assert body["requested_budget_ms"] == 20000
+
+
+def test_budget_must_be_positive(client):
+    upload(client, "t-p1-002")
+    for bad in (0, -1000):
+        r = client.post("/api/solve", json={"scenario_id": "t-p1-002",
+                                            "method": "insert",
+                                            "budget_ms": bad})
+        assert r.status_code == 422, bad
+        r = client.post("/api/baseline", json={"scenario_id": "t-p1-002",
+                                               "budget_ms": bad})
+        assert r.status_code == 422, bad
+
+
+# ---------- P1-2：提交绑定快照，漂移即失败 ----------
+
+def test_version_drift_fails_honestly(app, client, monkeypatch):
+    """排队期间发生确认：worker 执行前核对绑定快照，冲突则任务失败。"""
+    import threading
+    upload(client, "t-p1-101")
+    meta, _ = submit_and_wait(client, app, "/api/baseline",
+                              {"scenario_id": "t-p1-101", "budget_ms": 20000})
+    assert meta["status"] == "succeeded"
+
+    gate = threading.Event()
+
+    def slow_solve(scn, method, budget, **kw):
+        gate.wait(timeout=10)  # 占住唯一 worker
+        return _canned_outcome(
+            "FEASIBLE", [{"vehicle_id": "V1", "order_ids": ["o1", "o2", "o3"]}],
+            True)
+
+    monkeypatch.setattr("src.api.routes.pipeline.solve", slow_solve)
+    # 任务 A：占住 worker；任务 B：绑定 v1 排队
+    r_a = client.post("/api/solve", json={"scenario_id": "t-p1-101",
+                                          "method": "insert", "budget_ms": 20000})
+    assert r_a.status_code == 200 and r_a.json()["bound_version"] == 1
+    r_b = client.post("/api/solve", json={"scenario_id": "t-p1-101",
+                                          "method": "insert", "budget_ms": 20000})
+    assert r_b.status_code == 200 and r_b.json()["bound_version"] == 1
+    # 排队期间确认 → v2（直接走 draft/confirm，绝不能再排队 baseline，
+    # 否则队列被 A 堵死形成嵌套等待）
+    r = client.post("/api/constraints/draft",
+                    json={"scenario_id": "t-p1-101", "text": "o1 不换车"})
+    assert r.status_code == 200, r.text
+    did = r.json()["draft"]["draft_id"]
+    r = client.post(f"/api/constraints/{did}/confirm",
+                    json={"scenario_id": "t-p1-101", "base_version": 1,
+                          "accept_all": True})
+    assert r.status_code == 200 and r.json()["scenario_version"] == 2, r.text
+    gate.set()
+    assert app.state.queue.wait_idle(timeout=60)
+    meta_a = client.get(f"/api/jobs/{r_a.json()['job_id']}").json()
+    meta_b = client.get(f"/api/jobs/{r_b.json()['job_id']}").json()
+    assert meta_a["status"] == "succeeded"  # 执行时仍是 v1
+    assert meta_b["status"] == "failed"     # 执行前发现漂移
+    assert "E_VERSION_CONFLICT" in meta_b["error"]
+
+
+# ---------- P1-3：流式上传限额（无 Content-Length） ----------
+
+def test_upload_streaming_limit_without_content_length(tmp_path):
+    settings = Settings(project_root=tmp_path,
+                        llm=LLMConfig(provider="mock", demo_mode=True),
+                        max_upload_bytes=200)
+    app2 = create_app(settings)
+    with TestClient(app2) as c:
+        doc = json.dumps(make_doc("t-stream-001")).encode("utf-8")
+        big = (lambda: iter([doc[i:i + 64] for i in range(0, len(doc), 64)]))
+        r = c.post("/api/scenarios/upload", content=big(),
+                   headers={"Content-Type": "application/json"})
+        assert "content-length" not in {k.lower()
+                                        for k in r.request.headers}
+        assert r.status_code == 413
+
+
+def test_upload_streaming_under_limit_ok(tmp_path):
+    settings = Settings(project_root=tmp_path,
+                        llm=LLMConfig(provider="mock", demo_mode=True),
+                        max_upload_bytes=100_000)
+    app2 = create_app(settings)
+    with TestClient(app2) as c:
+        doc = json.dumps(make_doc("t-stream-002")).encode("utf-8")
+        gen = (doc[i:i + 64] for i in range(0, len(doc), 64))
+        r = c.post("/api/scenarios/upload", content=gen,
+                   headers={"Content-Type": "application/json"})
+        assert r.status_code == 200
+
+
+# ---------- P1-4：队列防重入 ----------
+
+def test_queue_start_refuses_while_alive(tmp_path):
+    q = JobQueue(tmp_path / "jobs")
+    q.start()
+    with pytest.raises(RuntimeError, match="E_QUEUE_RUNNING"):
+        q.start()
+    assert q.stop() is True
+    q.start()  # 真正退出后可重启
+    assert q.stop() is True
