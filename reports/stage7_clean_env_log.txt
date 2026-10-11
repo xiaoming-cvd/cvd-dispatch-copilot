@@ -1,59 +1,14 @@
-# 阶段 7 干净环境启动验证日志（2026-10-11）
-
-验证目的：不依赖开发机隐式状态，从干净 venv 安装锁定依赖并完成
-测试 + Web 冒烟 + CLI 演示。验证机即开发机，但使用独立 venv 与全新
-依赖安装（不使用主 .venv 的 coptpy 应急复制）。
-
-## 环境
-
-- 干净 venv：`%TEMP%\stage7_cleanenv\venv`（Python 3.12.14）
-- 依赖来源：`requirements.txt`（本轮验证后补齐 httpx==0.28.1）
-
-## 实际命令与结果
-
-```bat
-py -3.12 -m venv %TEMP%\stage7_cleanenv\venv
-%TEMP%\stage7_cleanenv\venv\Scripts\python.exe -m pip install -r requirements.txt
-%TEMP%\stage7_cleanenv\venv\Scripts\python.exe -m pytest -q
-```
-
-- 首次 `pip install -r requirements.txt` 因网络缓慢分步完成（基础包 →
-  ortools 9.14.6206 单独安装，第二次命中缓存成功）。
-- `pytest -q`：**326 passed, 6 skipped, 158 warnings in 5.50s**。
-  6 条 skipped 均为 COPT 依赖（pytest.importorskip("coptpy")，无许可环境
-  可移植）；本轮修复 2 条 COPT 测试在干净环境从 FAILED 改为 SKIP
-  （pytest.importorskip 守卫）。
-- 验证发现并已修复的问题：
-  1. requirements.txt 缺 `httpx==0.28.1`（TestClient 依赖，主 venv 中
-     曾手工安装）——已补入 requirements.txt；
-  2. `scripts/serve.py` 在干净环境 `ModuleNotFoundError: No module named
-     'src'`——已修复（启动脚本自行把项目根加入 sys.path）。
-
-## Web 冒烟（干净 venv）
-
-```bat
-%TEMP%\stage7_cleanenv\venv\Scripts\python.exe scripts\serve.py --port 8765
-curl http://127.0.0.1:8765/api/health   :: {"status":"ok",...,"default_budget_ms":60000}
-curl http://127.0.0.1:8765/             :: HTTP 200（前端单页）
-```
-
-- 服务启动即校验 LLM 配置；本机 .env 为 openai_compatible +
-  deepseek-flash（有密钥）。交付环境无密钥时按 .env.example 置
-  `LLM_PROVIDER=mock` 进入演示模式。
-- 验证后服务已停止（无后台进程残留）。
-
-## CLI 演示闭环（干净 venv）
-
-```bat
-%TEMP%\stage7_cleanenv\venv\Scripts\python.exe scripts\make_sample.py
-%TEMP%\stage7_cleanenv\venv\Scripts\python.exe scripts\solve_cli.py --input data\sample\sample_small.json --method low_disruption --write-scenario data\sample\sample_small_scenario.json --out demo_ld.json
-```
-
-- 退出码 0；结果 `status=feasible`，总行驶时间 2210 模型秒；
-  独立校验与上限回显见输出 JSON。
-
-## 结论
-
-干净环境可安装、可测试（无 COPT 许可 326 passed + 6 skipped）、
-可启动 Web、可跑通 CLI 演示闭环。COPT 8.0.6 为可选后端，按官方方式
-安装并置许可后，6 条跳过用例即可运行。
+=== 阶段7二次复审 干净环境复验 2026-10-11 18:46 ===
+venv: /tmp\stage7_cleanenv\venv（独立创建，无 COPT 许可环境）
+--- pip install -r requirements.txt ---
+--- pytest ---
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================ 348 passed, 6 skipped, 158 warnings in 6.68s =================
+--- review_check --skip-copt ---
+review_summary -> C:\Users\tianj\Desktop\城配调度副驾\reports\review_summary.json
+overall: pass
+REVIEW_EXIT=0
+cleanenv overall: pass | skip_copt: True
+pytest: ['================ 348 passed, 6 skipped, 158 warnings in 6.44s =================']
+smoke: {'insert': 0, 'low_disruption': 0, 'rebuild_ortools': 0, 'rebuild_ortools_backend': 0}
+coptpy: MISSING(optional)

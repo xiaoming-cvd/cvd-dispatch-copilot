@@ -67,9 +67,11 @@ def main() -> int:
     # 显式 backend="copt"，并校验结果中的实际后端，防止默认 OR-Tools 冒充。
     o1 = solve(scn1, "rebuild", time_limit_ms=5000, backend="copt")
     o2 = solve(scn2, "rebuild", time_limit_ms=5000, backend="copt")
+    # 二次复审 P0：严格判定——实际后端与请求后端都必须 == "copt"，
+    # 不允许"版本字符串含 copt"式的宽松 OR 替代实际后端核验。
     backend_ok = all(
-        (o.result.metrics.get("backend") == "copt"
-         or "copt" in o.result.solver_version.lower())
+        o.result.metrics.get("backend") == "copt"
+        and o.result.metrics.get("backend_requested") == "copt"
         for o in (o1, o2))
     if not backend_ok:
         print("FAIL: 穷举核对的实际后端不是 COPT（backend="

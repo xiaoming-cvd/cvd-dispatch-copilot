@@ -1,51 +1,77 @@
 {
-  "script": "check_base_fingerprint/1.0",
-  "basis": "(x, y, demand) 客户键集合的 Jaccard 重合度",
+  "script": "check_base_fingerprint/2.0",
+  "basis": {
+    "layout_overlap": "(x, y, demand) 客户键集合的 Jaccard 重合度",
+    "content_fingerprint": "(cust_no, x, y, demand, ready, due, service) 规范化序列的 sha256",
+    "source_integrity": "原始文件字节 sha256 对照 data/manifests/solomon_manifest.json"
+  },
   "threshold": 0.8,
   "instances": {
     "C101": {
-      "sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
-      "n_customers": 100
+      "layout_sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
+      "content_sha256": "45329df326e378efb22f904e64e35947ad32bf966bd0fc7f833aa579817e0ecf",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "C102": {
-      "sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
-      "n_customers": 100
+      "layout_sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
+      "content_sha256": "ed38a56fd7c94a5b809deba882b51af3e5753690f3b3385a9c8c14e8e399f395",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "C201": {
-      "sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
-      "n_customers": 100
+      "layout_sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
+      "content_sha256": "6448f7ab29e39fd8ac89e4104dd8aa0bd4038452bb434c8891d8a968caed9cf0",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "C202": {
-      "sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
-      "n_customers": 100
+      "layout_sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
+      "content_sha256": "1251021e979b0354720fde1ae57e91867aa1642a0bdf59f572849244bbb1f034",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "R101": {
-      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
-      "n_customers": 100
+      "layout_sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "content_sha256": "60ebebf2df0610c98547defec079444f295d19c868482bb22d7e598c72e36e5f",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "R102": {
-      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
-      "n_customers": 100
+      "layout_sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "content_sha256": "2bb6a0d51aa72cf42a6d96017a4c8a63aae19d52d3dcd81d62706a120fbc2c37",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "R201": {
-      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
-      "n_customers": 100
+      "layout_sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "content_sha256": "f5f241e3535cdf3180b38c280506b414686da69d8192a811a2b7eec42092103b",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "R202": {
-      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
-      "n_customers": 100
+      "layout_sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "content_sha256": "44a1f76ec16b578b15efe1c01f7258fa2e6368383573601af1682f149211d024",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "RC101": {
-      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
-      "n_customers": 100
+      "layout_sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "content_sha256": "7555acf03cda4e2a0330cc75ac958292b74699768ffcf27f62357baf18732983",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "RC201": {
-      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
-      "n_customers": 100
+      "layout_sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "content_sha256": "b0ff42caac4a17660ecbdac09ad54668f403bc56fb459766e835c1144059f796",
+      "n_customers": 100,
+      "manifest_match": true
     },
     "RC202": {
-      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
-      "n_customers": 100
+      "layout_sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "content_sha256": "c320acdcbea3a2e8fadfe153d37962b5770d8bfe8d7ee929db766705205ad008",
+      "n_customers": 100,
+      "manifest_match": true
     }
   },
   "pairs": [

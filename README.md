@@ -106,7 +106,7 @@ py -3.12 -m venv .venv
 | docs/field_dictionary.md | 输入/输出字段字典（对齐 docs/schema/scenario.schema.json） |
 | docs/algorithms.md | 三方法算法规则与状态语义（含成本上限与超时口径） |
 | docs/data_licenses.md | 数据授权清单（Solomon/Kilby/Amazon/合成事件） |
-| docs/testing.md | 测试说明（运行方式、覆盖范围、当前 332 条） |
+| docs/testing.md | 测试说明（运行方式、覆盖范围、当前 354 条） |
 | docs/known_limitations.md | 已知限制（软预算、能力边界、Mock 声明等） |
 | docs/demo_script.md | 演示脚本（命令 + 预期输出，可照抄复现） |
 | docs/delivery_checklist.md | 交付包检查清单与私有仓库文件清单 |

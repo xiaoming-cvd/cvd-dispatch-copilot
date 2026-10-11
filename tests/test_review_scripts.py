@@ -65,6 +65,64 @@ class TestFingerprintMissingSource:
                 bases.add(p.name.split("-s")[0].upper() + ".txt")
         assert set(fp.EXPECTED_FILES) == bases
 
+    def _tmp_raw(self, tmp_path):
+        """把 11 个真实源文件复制到临时目录（不动开发机原件）。"""
+        src = ROOT / "data" / "raw" / "solomon"
+        dst = tmp_path / "raw"
+        dst.mkdir()
+        for f in src.glob("*.txt"):
+            (dst / f.name).write_bytes(f.read_bytes())
+        return dst
+
+    def test_valid_sources_pass_with_manifest(self, tmp_path, monkeypatch, capsys):
+        fp = _load_script("check_base_fingerprint")
+        monkeypatch.setattr(fp, "RAW_DIR", self._tmp_raw(tmp_path))
+        monkeypatch.setattr(fp, "OUT", tmp_path / "fp.json")
+        assert fp.main() == 0
+        out = capsys.readouterr().out
+        assert "manifest 一致性 11/11" in out
+
+    def test_tampered_timewindow_fails(self, tmp_path, monkeypatch, capsys):
+        # 篡改时间窗 → 字节 sha256 与 manifest 不符 → fail(1)
+        fp = _load_script("check_base_fingerprint")
+        raw = self._tmp_raw(tmp_path)
+        victim = raw / "C101.txt"
+        text = victim.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        # 找一个 READY TIME 行改一个数字（保持行结构）
+        for i, ln in enumerate(lines):
+            parts = ln.split()
+            if len(parts) >= 7:  # 客户行：CUST NO X Y DEMAND READY DUE SERVICE
+                try:
+                    float(parts[0])
+                except ValueError:
+                    continue  # 表头行（CUST NO. / READY TIME 等）
+                parts[4] = str(float(parts[4]) + 1.0)  # READY TIME 列
+                lines[i] = "  ".join(parts)
+                break
+        victim.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        monkeypatch.setattr(fp, "RAW_DIR", raw)
+        monkeypatch.setattr(fp, "OUT", tmp_path / "fp.json")
+        assert fp.main() == 1
+        assert "manifest" in capsys.readouterr().out
+
+    def test_replaced_content_same_filename_fails(self, tmp_path, monkeypatch, capsys):
+        # 保留文件名、替换文件内容 → fail(1)
+        fp = _load_script("check_base_fingerprint")
+        raw = self._tmp_raw(tmp_path)
+        (raw / "R101.txt").write_bytes((raw / "C101.txt").read_bytes())
+        monkeypatch.setattr(fp, "RAW_DIR", raw)
+        monkeypatch.setattr(fp, "OUT", tmp_path / "fp.json")
+        assert fp.main() == 1
+        assert "R101.txt" in capsys.readouterr().out
+
+    def test_missing_manifest_fails(self, tmp_path, monkeypatch):
+        fp = _load_script("check_base_fingerprint")
+        monkeypatch.setattr(fp, "RAW_DIR", self._tmp_raw(tmp_path))
+        monkeypatch.setattr(fp, "MANIFEST", tmp_path / "no_such_manifest.json")
+        monkeypatch.setattr(fp, "OUT", tmp_path / "fp.json")
+        assert fp.main() == 1
+
 
 # ---------- 2. solve_cli --backend 透传 ----------
 
@@ -113,6 +171,70 @@ class TestReviewScriptStructure:
         src = (ROOT / "scripts" / "exhaustive_check.py").read_text(encoding="utf-8")
         assert 'backend="copt"' in src, "穷举核对声称验证 COPT 就必须显式指定后端"
         assert "backend_verified" in src
+
+
+# ---------- 5. 后端断言严格性（二次复审 P0 反例） ----------
+
+class TestBackendAssertionStrict:
+    """审查复现的反例：backend=ortools + requested=copt + 版本含 copt，
+    宽松 OR 判定会误判通过；严格判定必须失败且保留结果 JSON。"""
+
+    def _rc(self, tmp_path, data):
+        rc_mod = _load_script("review_check")
+        f = tmp_path / "result.json"
+        f.write_text(json.dumps(data), encoding="utf-8")
+        out = rc_mod.assert_backend(f, data["_expected"])
+        return out, f
+
+    def test_mixed_copt_named_but_ortools_actual_fails(self, tmp_path):
+        out, f = self._rc(tmp_path, {
+            "_expected": "copt",
+            "metrics": {"backend": "ortools", "backend_requested": "copt"},
+            "solver_version": "stage2-copt-8.0.6",
+        })
+        assert out["returncode"] == 1
+        assert f.exists(), "失败结果 JSON 必须保留供复查"
+
+    def test_mixed_ortools_named_but_copt_actual_fails(self, tmp_path):
+        out, f = self._rc(tmp_path, {
+            "_expected": "ortools",
+            "metrics": {"backend": "copt", "backend_requested": "ortools"},
+            "solver_version": "stage2-ortools-9.14.6206",
+        })
+        assert out["returncode"] == 1
+        assert f.exists()
+
+    def test_version_inconsistent_with_actual_backend_fails(self, tmp_path):
+        out, f = self._rc(tmp_path, {
+            "_expected": "copt",
+            "metrics": {"backend": "copt", "backend_requested": "copt"},
+            "solver_version": "stage2-ortools-9.14.6206",
+        })
+        assert out["returncode"] == 1
+        assert f.exists()
+
+    def test_real_copt_result_passes_and_cleans_up(self, tmp_path):
+        out, f = self._rc(tmp_path, {
+            "_expected": "copt",
+            "metrics": {"backend": "copt", "backend_requested": "copt"},
+            "solver_version": "stage2-copt-8.0.6",
+        })
+        assert out["returncode"] == 0
+        assert not f.exists()
+
+    def test_real_ortools_result_passes(self, tmp_path):
+        out, f = self._rc(tmp_path, {
+            "_expected": "ortools",
+            "metrics": {"backend": "ortools", "backend_requested": "ortools"},
+            "solver_version": "stage2-ortools-9.14.6206",
+        })
+        assert out["returncode"] == 0
+
+    def test_exhaustive_check_no_lenient_or(self):
+        src = (ROOT / "scripts" / "exhaustive_check.py").read_text(encoding="utf-8")
+        assert 'or "copt" in' not in src
+        assert 'backend") == "copt"' in src
+        assert 'backend_requested") == "copt"' in src
 
 
 # ---------- 4. 文档与源码/数据一致 ----------

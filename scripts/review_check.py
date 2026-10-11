@@ -38,7 +38,16 @@ def run(cmd: list[str]) -> dict:
 
 
 def assert_backend(result_file: Path, expected: str) -> dict:
-    """读取 smoke 结果 JSON，校验实际后端与期望一致（防"命名 copt 实为 ortools"）。
+    """读取 smoke 结果 JSON，严格校验实际后端与请求后端（防"命名 copt 实为
+    ortools"假阳性，二次复审 P0：不接受"backend==expected 或版本含 copt"的
+    宽松 OR 判定）。
+
+    通过条件（全部满足）：
+    - metrics.backend == expected（实际执行后端，严格相等）；
+    - metrics.backend_requested == expected（请求后端一致，防回退）；
+    - solver_version 非空时须包含 expected 字样（仅作附加一致性校验，
+      不能替代对实际后端的判定）。
+    失败时保留结果 JSON 供复查；成功才删除临时文件。
 
     返回与 run() 同形的 dict，returncode 0 = 后端匹配，1 = 不匹配/文件缺失。
     """
@@ -51,11 +60,20 @@ def assert_backend(result_file: Path, expected: str) -> dict:
     backend = (data.get("metrics") or {}).get("backend")
     requested = (data.get("metrics") or {}).get("backend_requested")
     solver_version = data.get("solver_version", "")
-    ok = (backend == expected
-          or (expected == "copt" and "copt" in solver_version.lower()))
-    result_file.unlink(missing_ok=True)
+    problems = []
+    if backend != expected:
+        problems.append(f"实际后端 backend={backend!r} != {expected!r}")
+    if requested != expected:
+        problems.append(f"请求后端 backend_requested={requested!r} != {expected!r}")
+    if solver_version and expected not in solver_version.lower():
+        problems.append(f"solver_version={solver_version!r} 与 {expected} 不一致")
+    ok = not problems
+    if ok:
+        result_file.unlink(missing_ok=True)
     detail = (f"expected={expected} backend={backend} "
-              f"backend_requested={requested} solver_version={solver_version}")
+              f"backend_requested={requested} solver_version={solver_version}"
+              + ("; PASS" if ok else "; FAIL: " + "；".join(problems))
+              + ("" if ok else f"；结果 JSON 保留于 {result_file}"))
     return {"cmd": f"assert_backend({expected})", "returncode": 0 if ok else 1,
             "elapsed_s": 0.0, "stdout_tail": detail, "stderr_tail": ""}
 

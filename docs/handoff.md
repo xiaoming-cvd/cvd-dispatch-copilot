@@ -8,7 +8,15 @@
 > `scripts/review_check.py` 实跑结果为准。提交历史可用包内
 > `城配调度副驾.bundle`（git bundle）完整核验。
 
-## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）（2026-10-11）
+## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）· 阶段 7 ✅ 交付包二次复审修复完成（待终审）（2026-10-11）
+
+> **阶段 7 二次复审（2026-10-11）**：P0 后端断言改严格相等（实际+请求后端
+> 均须匹配期望，solver_version 仅作附加校验，失败保留结果 JSON，含反例单测）；
+> P1 白名单制打包（`scripts/build_delivery_zip.py`，敏感字段扫描 + 包内
+> manifest 自核）；P1 指纹 v2.0（布局 Jaccard 与全内容指纹分离，11 个源文件
+> 字节 sha256 对 manifest 核对，篡改即 fail）；P1 三份审查证据闭环（有 COPT
+> 全量 354 passed、dev skip 354、无许可干净环境 348+6 skipped，三份摘要随包）。
+> 当前基线 **354 passed**（干净无许可环境 348 passed + 6 skipped）。
 
 > **阶段 4 v2（第四阶段跨电脑复审，2026-10-11）**：复审结论"有条件通过代码骨架"。
 > P0-1（显式 decisions 只接受所列项）+ P0-2（source_text 必须是原文子串，伪造依据
@@ -312,14 +320,14 @@ cd C:\Users\tianj\Desktop\城配调度副驾
   data_licenses、testing、known_limitations、demo_script、
   delivery_checklist（检查清单+私有仓库文件清单）。
 - **干净环境验证**（reports/stage7_clean_env_log.txt）：独立 venv 按
-  requirements.txt 全新安装 → **326 passed + 6 skipped**（COPT 用例
+  requirements.txt 全新安装 → **348 passed + 6 skipped**（COPT 用例
   importorskip，无许可可移植）→ serve.py 冒烟（health 200 / 前端 200）
   → CLI 演示闭环退出码 0。验证发现并修复 2 个可移植性问题：
   requirements.txt 补 httpx==0.28.1；serve.py 自加项目根到 sys.path。
 - **未执行（待确认）**：私有远端创建与推送（待队长确认）；总工"冻结
   评测完成"最终验收；下一轮前置冻结（开跑前写入草稿哈希到不可变
   manifest）+ 300s COPT 诊断（指定 3 个 dev 大场景）+ 进程硬截止。
-- 测试：开发 venv 332 passed；干净 venv 326 passed + 6 skipped。
+- 测试：开发 venv 332 passed；干净 venv 348 passed + 6 skipped。
 
 ## 下一阶段所需输入（阶段 7 收尾）
 

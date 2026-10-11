@@ -10,7 +10,16 @@
 
 （依次：全量测试；审查模式（有 COPT，含显式 rebuild copt 冒烟与后端校验）；
 无 COPT 模式（rebuild 默认 OR-Tools 冒烟仍会运行）。两种模式退出码 0 才为
-全量 pass；任一环节显式跳过（退出码 2）时 overall 显示 partial 而非 pass。）
+全量 pass；任一环节显式跳过（退出码 2）时 overall 显示 partial 而非 pass。
+当前基线（2026-10-11 二次复审后）：开发机 354 passed；无 COPT 干净环境
+348 passed + 6 skipped。）
+
+```bat
+.venv\Scripts\python.exe scripts\build_delivery_zip.py
+```
+
+（重建交付 zip：白名单制 + 敏感字段扫描 + 包内 manifest 自核，自动更新
+桌面 校验和清单.txt。）
 
 ## 覆盖范围（tests/）
 
