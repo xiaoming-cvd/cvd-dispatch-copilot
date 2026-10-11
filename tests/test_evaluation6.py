@@ -86,3 +86,25 @@ def test_runner_materialize_error_recorded(tmp_path, monkeypatch):
     rec = json.loads(out.read_text(encoding="utf-8"))
     assert rec["materialize_error"]
     assert rec["rows"] == []
+
+
+def test_summary_covers_all_manifest_scenarios():
+    """summary.csv 必须与冻结清单逐场景对齐：39 场景、物化失败场景有失败行，
+    不得静默改变分母（2026-10-11 决策②）。"""
+    import csv
+    eval_dir = ROOT / "reports" / "evaluation6"
+    manifest = json.loads((eval_dir / "frozen_manifest.json")
+                          .read_text(encoding="utf-8"))
+    man_ids = {e["scenario_id"] for e in manifest["scenarios"]}
+    with open(eval_dir / "summary.csv", encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    sum_ids = {r["scenario_id"] for r in rows}
+    assert sum_ids == man_ids, (man_ids - sum_ids, sum_ids - man_ids)
+    mat = [r for r in rows if r["method"] == "__materialize__"]
+    assert len(mat) == 8
+    for r in mat:
+        assert r["status"] == "materialize_error"
+        assert "E_PLAN_NOT_FOUND" in r["solver_status"]
+        assert r["budget_ms"] == str(manifest["budget_ms"])
+    # 每个场景至少有一行，且预算列无空缺
+    assert all(r["budget_ms"] for r in rows)

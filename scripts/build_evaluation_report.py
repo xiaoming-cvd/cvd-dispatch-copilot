@@ -30,6 +30,25 @@ def load_records() -> list[dict]:
     return recs
 
 
+def enrich_error_records(recs: list[dict], manifest: dict) -> None:
+    """物化失败记录补齐 split/n_orders（从清单+草稿文件），不得静默丢出分母。"""
+    by_id = {e["scenario_id"]: e for e in manifest["scenarios"]}
+    for rec in recs:
+        if not rec.get("materialize_error"):
+            continue
+        entry = by_id.get(rec["scenario_id"])
+        if entry is None:
+            continue
+        rec["split"] = entry["split"]
+        draft_path = (ROOT / "data" / "processed" / "scenarios"
+                      / entry["split"] / f"{rec['scenario_id']}.json")
+        try:
+            draft = json.loads(draft_path.read_text(encoding="utf-8"))["draft"]
+            rec["n_orders"] = len(draft.get("orders", []))
+        except Exception:
+            rec["n_orders"] = "?"
+
+
 def main_rows(rec: dict) -> dict[str, dict]:
     """主比较三方法行（rebuild 取 OR-Tools 默认行）。"""
     out = {}
@@ -162,7 +181,7 @@ def charts(recs: list[dict]) -> list[str]:
         ax.bar([p + (i - 1) * width for p in x], vals, width, label=meth)
     ax.set_xticks(list(x)); ax.set_xticklabels(labels, rotation=60, ha="right", fontsize=8)
     ax.set_ylabel("总行驶时间（模型秒，抽象成本，非人民币）")
-    ax.set_title("阶段6 冻结评测 · 测试集三方法成本对比（60s 端到端预算）")
+    ax.set_title("阶段6 评测 · 测试集三方法成本对比（60s 软预算）")
     ax.legend()
     p = EVAL_DIR / "chart_cost_test.png"
     fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
@@ -214,16 +233,27 @@ def main() -> None:
     recs = load_records()
     manifest = json.loads((EVAL_DIR / "frozen_manifest.json")
                           .read_text(encoding="utf-8"))
+    enrich_error_records(recs, manifest)
 
     # summary.csv（原始结果一致性：报告全部来自这些行）
+    # 物化失败场景逐场景补一行 method=__materialize__，保证清单↔汇总逐行对齐
     with open(EVAL_DIR / "summary.csv", "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(["scenario_id", "split", "n_orders", "method", "backend",
                     "cost_cap_ratio", "status", "has_solution",
                     "total_travel_time_s", "elapsed_ms", "elapsed_solve_ms",
                     "elapsed_validate_ms", "end_to_end_ms", "validation_ok",
-                    "solver_status", "scenario_input_hash"])
+                    "solver_status", "scenario_input_hash", "budget_ms"])
         for rec in recs:
+            if rec.get("materialize_error"):
+                w.writerow([rec["scenario_id"], rec.get("split"),
+                            rec.get("n_orders"), "__materialize__", "",
+                            "", "materialize_error", False, "", "", "", "",
+                            rec.get("end_to_end_ms", ""), "",
+                            rec["materialize_error"],
+                            rec.get("scenario_input_hash", ""),
+                            manifest["budget_ms"]])
+                continue
             for row in rec.get("rows", []):
                 w.writerow([rec["scenario_id"], rec.get("split"),
                             rec.get("n_orders"), row["method"],
@@ -235,7 +265,18 @@ def main() -> None:
                             row.get("elapsed_validate_ms"),
                             row.get("end_to_end_ms"), row.get("validation_ok"),
                             row.get("solver_status"),
-                            rec.get("scenario_input_hash")])
+                            rec.get("scenario_input_hash"),
+                            rec.get("budget_ms", manifest["budget_ms"])])
+
+    # 一致性校验：清单 39 场景 ↔ summary 场景逐一对齐，缺一即失败
+    man_ids = {e["scenario_id"] for e in manifest["scenarios"]}
+    sum_ids = {r["scenario_id"] for r in recs}
+    missing = man_ids - sum_ids
+    extra = sum_ids - man_ids
+    if missing or extra:
+        raise SystemExit(f"清单与原始结果不一致: 缺 {sorted(missing)} 多 {sorted(extra)}")
+    n_split = Counter(e["split"] for e in manifest["scenarios"])
+    print(f"一致性 OK：清单 {dict(n_split)} = 原始结果 {dict(Counter(r.get('split') for r in recs))}")
 
     dev_table, dev_stats = comparison_table(recs, "dev")
     test_table, test_stats = comparison_table(recs, "test")
@@ -275,17 +316,57 @@ def main() -> None:
 
     chart_names = charts(recs)
 
+    # 越界统计（软预算如实披露）
+    over_copt, over_other = [], []
+    for rec in recs:
+        for row in rec.get("rows", []):
+            e = row.get("elapsed_ms")
+            if e and e > manifest["budget_ms"]:
+                (over_copt if row.get("backend") == "copt" else over_other)\
+                    .append((rec["scenario_id"], row["method"],
+                             row.get("backend"), e))
+    over_copt.sort(key=lambda x: -x[3])
+    over_other.sort(key=lambda x: -x[3])
+
+    # 物化失败场景逐一清单（不静默改变分母）
+    mat_fail_rows = [[r["scenario_id"], r.get("split"), r.get("n_orders"),
+                      r["materialize_error"]]
+                     for r in recs if r.get("materialize_error")]
+    mat_fail_table = md_table(
+        ["场景", "分组", "订单数", "物化失败原因（原始记录）"], mat_fail_rows)
+    n_mat = Counter(r.get("split") for r in recs if r.get("materialize_error"))
+
     n_test = sum(1 for r in recs if r.get("split") == "test")
-    report = f"""# 阶段 6 冻结评测报告
+    n_dev = sum(1 for r in recs if r.get("split") == "dev")
+    n_test_mat = n_mat.get("test", 0)
+    n_dev_mat = n_mat.get("dev", 0)
+    report = f"""# 阶段 6 评测报告（60 秒软预算版）
 
 - 生成时间：{__import__('datetime').datetime.now().isoformat(timespec='seconds')}
 - 冻结清单：`frozen_manifest.json`（开跑前写入，含划分/种子/配置/预算）
 - 原始结果：`raw/*.json`（每场景输入哈希/状态/指标/异常/分项耗时）+ `summary.csv`
-- 口径：三方法统一 {manifest['budget_ms'] / 1000:.0f} 秒端到端预算；rebuild 主比较
-  默认 OR-Tools；状态如实——{manifest['status_semantics']['TIMEOUT/NO_FEASIBLE_FOUND']}，
-  {manifest['status_semantics']['OR-Tools FEASIBLE']}；COPT 仅 dev 集诊断、单独成表。
+- **样本口径（修正）**：清单共 39 场景 = dev {n_dev} + test {n_test}，
+  与 `raw/*.json`、`summary.csv` 逐行对齐（一致性校验在生成时强制执行）。
+  其中 {len(mat_fail_rows)} 个场景在"原计划物化"阶段失败（dev {n_dev_mat} +
+  test {n_test_mat}，原因见下表），未进入三方法比较，但保留在分母与清单中，
+  不静默剔除。
+- **预算口径（修正）**：本轮为 **60 秒软预算评测**——求解器时间限制为软上限、
+  无独立进程硬截断，**不得宣传为严格同预算**。越界行如实保留并统计如下；
+  正式版将以独立进程（或等效机制）执行硬截断，并记录请求预算/实际耗时/超时状态。
+- 状态语义：TIMEOUT / NO_FEASIBLE_FOUND {manifest['status_semantics']['TIMEOUT/NO_FEASIBLE_FOUND']}；
+  OR-Tools 可行{manifest['status_semantics']['OR-Tools FEASIBLE']}；
+  PROVEN_INFEASIBLE {manifest['status_semantics']['PROVEN_INFEASIBLE']}；
+  COPT 仅 dev 集诊断、单独成表。
 
-## 一、测试集（冻结配置，test，n={n_test}）
+## 〇、分母核对与物化失败场景清单
+
+**物化失败 {len(mat_fail_rows)} 场景**（构建"原计划"的独立 20 秒预算耗尽，
+E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败，更**不是**
+场景不可行的证明；该阶段失败场景不进入方法级比较，但保留在分母中）：
+
+{mat_fail_table}
+
+## 一、测试集（冻结配置，test，n={n_test}，其中物化失败 {n_test_mat} 个）
 
 {test_table}
 
@@ -294,7 +375,7 @@ def main() -> None:
 
 **失败分布**：{dict(dist_test)}
 
-## 二、开发集（dev，定参数用；含 COPT 诊断与敏感性）
+## 二、开发集（dev，定参数用；含 COPT 诊断与敏感性，n={n_dev}，其中物化失败 {n_dev_mat} 个）
 
 {dev_table}
 
@@ -314,27 +395,56 @@ def main() -> None:
 说明：COPT 在 75+ 节点 60 秒无 incumbent 记为 no_feasible_found（≠不可行）；
 OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之一）。
 
-## 五、图表（由原始结果程序生成）
+## 五、软预算越界统计（如实披露，不修正不剔除）
+
+- COPT 诊断行（dev，rebuild/backend=copt）越界 **{len(over_copt)}** 行，
+  幅度 {over_copt[-1][3] / 1000:.1f}s ~ {over_copt[0][3] / 1000:.1f}s——
+  **属秒级越界，不是毫秒粒度误差**；最大 {over_copt[0][0]} {over_copt[0][3]}ms。
+  COPT 无 incumbent 的越界行状态仍为 TIMEOUT_NO_SOLUTION（≠不可行）。
+- 其余方法越界 **{len(over_other)}** 行，幅度 ≤
+  {max((x[3] for x in over_other), default=0) / 1000:.3f}s（低扰动候选池搜索的
+  求解器软上限残余，接近 60.0s）。
+- 结论：本轮各方法实际耗时以 `summary.csv` 的 elapsed_ms/budget_ms 为准；
+  下一轮用独立进程硬截断后可改称"严格 60 秒同预算"。
+
+## 六、产品适用范围分层（按 2026-10-11 决策）
+
+- **可演示（已验证）**：出发前、单仓场景——评测中物化成功且低扰动法
+  稳定可行（test 集 15/15、dev 集物化成功样本 15/16）的范围。
+- **实验性（需人工复核）**：大规模（kilby 75+ 节点）与紧时间窗（R 系列）
+  场景——insert/rebuild 常快速返回 NO_FEASIBLE_FOUND，COPT 60 秒无 incumbent；
+  产品功能可展示结果，但必须标注"实验性能力，需调度员复核"。
+- **不按节点数简单划界**：18 单的 r201-s101 也出现 insert/rebuild 未找到解；
+  大规模 Kilby 与小规模 Solomon 数据来源、约束特征均不同，适用边界
+  由数据族+约束特征共同决定，而非仅订单数。
+- **NO_FEASIBLE_FOUND 语义**：毫秒级返回表示该算法快速判定无可行解，
+  **不是**问题不可行（仅 COPT proven_infeasible 可称不可行，如 r202-s102）。
+- **算法改进列为后续工作**：insert/rebuild 在大规模与紧时间窗场景的能力
+  提升、60 秒硬截止机制、300 秒 COPT 诊断（预先指定 3 个代表性 dev 大场景、
+  单独成表，不碰 test 集、不并入主比较）——均未在本轮执行。
+
+## 七、图表（由原始结果程序生成）
 
 {chr(10).join(f'- `{n}`' for n in chart_names)}
 
-## 六、复现命令
+## 八、复现命令
 
 ```bat
 .venv\\Scripts\\python.exe scripts\\run_evaluation.py --split all --copt-diag --overwrite
 .venv\\Scripts\\python.exe scripts\\build_evaluation_report.py
 ```
 
-## 七、诚实声明
+## 九、诚实声明
 
 - 成本为模型行驶秒（无真实单价，不报人民币节约）；
-- 物化失败、超时、证明不可行样本全部在上表与失败分布中，未剔除；
+- 物化失败、超时、证明不可行样本全部在上表与失败分布中，未剔除，分母恒定 39；
 - 若某方法无提升，以上配对比较如实呈现，不做选择性报告；
 - **insert 能力边界**：插入法在大场景（kilby 75+ 节点）多为毫秒级返回
   "预算内未找到解"——这是算法快速判定无可行插入位置的真实行为，非运行错误；
   rebuild OR-Tools 同理会在部分紧时间窗场景快速 FAIL（≠证明不可行）；
-- **计时粒度**：耗时以毫秒记录，亚毫秒求解计 0ms；求解器时间限制为软上限，
-  端到端耗时可能略超 60000ms（如 60046ms），如实记录不修正；
+- **计时与预算**：耗时以毫秒记录，亚毫秒求解计 0ms；本轮为 60 秒软预算
+  （无硬截断），越界行见"软预算越界统计"节，如实记录不修正、不归咎于
+  毫秒粒度误差；
 - **LD 用满预算**：low_disruption 的候选池搜索在 60 秒预算内持续改进，
   因此 elapsed 多为 60000ms 左右，属于该方法设计而非异常。
 """

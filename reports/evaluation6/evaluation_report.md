@@ -1,13 +1,39 @@
-# 阶段 6 冻结评测报告
+# 阶段 6 评测报告（60 秒软预算版）
 
-- 生成时间：2026-10-11T14:48:26
+- 生成时间：2026-10-11T15:22:58
 - 冻结清单：`frozen_manifest.json`（开跑前写入，含划分/种子/配置/预算）
 - 原始结果：`raw/*.json`（每场景输入哈希/状态/指标/异常/分项耗时）+ `summary.csv`
-- 口径：三方法统一 60 秒端到端预算；rebuild 主比较
-  默认 OR-Tools；状态如实——不等于不可行，
-  不等于证明最优；COPT 仅 dev 集诊断、单独成表。
+- **样本口径（修正）**：清单共 39 场景 = dev 23 + test 16，
+  与 `raw/*.json`、`summary.csv` 逐行对齐（一致性校验在生成时强制执行）。
+  其中 8 个场景在"原计划物化"阶段失败（dev 7 +
+  test 1，原因见下表），未进入三方法比较，但保留在分母与清单中，
+  不静默剔除。
+- **预算口径（修正）**：本轮为 **60 秒软预算评测**——求解器时间限制为软上限、
+  无独立进程硬截断，**不得宣传为严格同预算**。越界行如实保留并统计如下；
+  正式版将以独立进程（或等效机制）执行硬截断，并记录请求预算/实际耗时/超时状态。
+- 状态语义：TIMEOUT / NO_FEASIBLE_FOUND 不等于不可行；
+  OR-Tools 可行不等于证明最优；
+  PROVEN_INFEASIBLE 仅 COPT MIP 可给出；
+  COPT 仅 dev 集诊断、单独成表。
 
-## 一、测试集（冻结配置，test，n=15）
+## 〇、分母核对与物化失败场景清单
+
+**物化失败 8 场景**（构建"原计划"的独立 20 秒预算耗尽，
+E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败，更**不是**
+场景不可行的证明；该阶段失败场景不进入方法级比较，但保留在分母中）：
+
+| 场景 | 分组 | 订单数 | 物化失败原因（原始记录） |
+|---|---|---|---|
+| c101-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| c102-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| r101-s101 | dev | 18 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| r101-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| r102-s101 | dev | 18 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| r102-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| r201-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+| rc101-s201 | test | 18 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
+
+## 一、测试集（冻结配置，test，n=16，其中物化失败 1 个）
 
 | 场景 | 订单数 | insert(状态/成本s/耗时ms) | rebuild OR-Tools | low_disruption(cap1.10) | 端到端ms |
 |---|---|---|---|---|---|
@@ -24,6 +50,7 @@
 | kilby-tai75a-s201 | 75 | 预算内未找到解(≠不可行) / —s / 62ms | 可行 / 3776s / 110ms | 可行 / 2745s / 60014ms | 60202 |
 | kilby-tai75c-s201 | 75 | 预算内未找到解(≠不可行) / —s / 16ms | 预算内未找到解(≠不可行) / —s / 125ms | 可行 / 2454s / 60000ms | 60187 |
 | kilby-tai75d-s201 | 75 | 预算内未找到解(≠不可行) / —s / 0ms | 可行 / 3476s / 141ms | 可行 / 2134s / 60000ms | 60156 |
+| rc101-s201 | 18 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
 | rc201-s201 | 18 | 可行 / 51464s / 0ms | 可行 / 52776s / 0ms | 可行 / 51464s / 733ms | 733 |
 | rc202-s201 | 18 | 可行 / 47502s / 0ms | 预算内未找到解(≠不可行) / —s / 0ms | 可行 / 47502s / 389ms | 389 |
 
@@ -34,14 +61,16 @@
 | rebuild OR-Tools | 5/15（33%） |
 | low_disruption(1.10) | 15/15（100%） |
 
-**失败分布**：{'insert:feasible': 4, 'rebuild:no_feasible_found': 10, 'low_disruption:feasible': 15, 'rebuild:feasible': 5, 'insert:no_feasible_found': 11}
+**失败分布**：{'insert:feasible': 4, 'rebuild:no_feasible_found': 10, 'low_disruption:feasible': 15, 'rebuild:feasible': 5, 'insert:no_feasible_found': 11, '原计划物化超时(≠无解)': 1}
 
-## 二、开发集（dev，定参数用；含 COPT 诊断与敏感性）
+## 二、开发集（dev，定参数用；含 COPT 诊断与敏感性，n=23，其中物化失败 7 个）
 
 | 场景 | 订单数 | insert(状态/成本s/耗时ms) | rebuild OR-Tools | low_disruption(cap1.10) | 端到端ms |
 |---|---|---|---|---|---|
 | c101-s101 | 18 | 可行 / 38540s / 0ms | 可行 / 42261s / 110ms | 可行 / 38540s / 3608ms | 11202 |
+| c101-s102 | 17 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
 | c102-s101 | 18 | 可行 / 46106s / 0ms | 可行 / 45878s / 0ms | 可行 / 46106s / 483ms | 30328 |
+| c102-s102 | 17 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
 | kilby-c100-s101 | 100 | 预算内未找到解(≠不可行) / —s / 16ms | 预算内未找到解(≠不可行) / —s / 187ms | 可行 / 1988s / 60000ms | 244109 |
 | kilby-c100b-s101 | 100 | 预算内未找到解(≠不可行) / —s / 46ms | 预算内未找到解(≠不可行) / —s / 155ms | 可行 / 1278s / 60000ms | 245375 |
 | kilby-c120-s101 | 120 | 预算内未找到解(≠不可行) / —s / 16ms | 预算内未找到解(≠不可行) / —s / 250ms | 可行 / 1554s / 60000ms | 245000 |
@@ -53,12 +82,17 @@
 | kilby-tai150b-s101 | 150 | 预算内未找到解(≠不可行) / —s / 15ms | 预算内未找到解(≠不可行) / —s / 234ms | 可行 / 4652s / 60000ms | 257656 |
 | kilby-tai150d-s101 | 150 | 预算内未找到解(≠不可行) / —s / 108ms | 预算内未找到解(≠不可行) / —s / 266ms | 可行 / 5279s / 60000ms | 254421 |
 | kilby-tai75b-s101 | 75 | 预算内未找到解(≠不可行) / —s / 16ms | 预算内未找到解(≠不可行) / —s / 1405ms | 可行 / 2177s / 60000ms | 243922 |
+| r101-s101 | 18 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
+| r101-s102 | 17 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
+| r102-s101 | 18 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
+| r102-s102 | 17 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
 | r201-s101 | 18 | 预算内未找到解(≠不可行) / —s / 15ms | 预算内未找到解(≠不可行) / —s / 94ms | 可行 / 34670s / 687ms | 3796 |
+| r201-s102 | 17 | 物化失败:ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | — | — | — | — | — |
 | r202-s101 | 18 | 可行 / 37050s / 0ms | 可行 / 40180s / 0ms | 可行 / 37050s / 280ms | 4671 |
 | r202-s102 | 17 | 预算内未找到解(≠不可行) / —s / 0ms | 预算内未找到解(≠不可行) / —s / 3687ms | 预算内未找到解(≠不可行) / —s / 30ms | 29125 |
 
 **可行率**：insert 3/16（19%）；rebuild OR-Tools 3/16（19%）；low_disruption 15/16（94%）
-**失败分布**：{'insert:feasible': 3, 'rebuild:feasible': 3, 'low_disruption:feasible': 15, 'insert:no_feasible_found': 13, 'rebuild:no_feasible_found': 13, 'low_disruption:no_feasible_found': 1}
+**失败分布**：{'insert:feasible': 3, 'rebuild:feasible': 3, 'low_disruption:feasible': 15, '原计划物化超时(≠无解)': 7, 'insert:no_feasible_found': 13, 'rebuild:no_feasible_found': 13, 'low_disruption:no_feasible_found': 1}
 
 ## 三、配对比较（注明样本占比，单位：模型行驶秒）
 
@@ -90,28 +124,57 @@
 说明：COPT 在 75+ 节点 60 秒无 incumbent 记为 no_feasible_found（≠不可行）；
 OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之一）。
 
-## 五、图表（由原始结果程序生成）
+## 五、软预算越界统计（如实披露，不修正不剔除）
+
+- COPT 诊断行（dev，rebuild/backend=copt）越界 **11** 行，
+  幅度 62.5s ~ 77.3s——
+  **属秒级越界，不是毫秒粒度误差**；最大 kilby-tai150b-s101 77296ms。
+  COPT 无 incumbent 的越界行状态仍为 TIMEOUT_NO_SOLUTION（≠不可行）。
+- 其余方法越界 **10** 行，幅度 ≤
+  60.046s（低扰动候选池搜索的
+  求解器软上限残余，接近 60.0s）。
+- 结论：本轮各方法实际耗时以 `summary.csv` 的 elapsed_ms/budget_ms 为准；
+  下一轮用独立进程硬截断后可改称"严格 60 秒同预算"。
+
+## 六、产品适用范围分层（按 2026-10-11 决策）
+
+- **可演示（已验证）**：出发前、单仓场景——评测中物化成功且低扰动法
+  稳定可行（test 集 15/15、dev 集物化成功样本 15/16）的范围。
+- **实验性（需人工复核）**：大规模（kilby 75+ 节点）与紧时间窗（R 系列）
+  场景——insert/rebuild 常快速返回 NO_FEASIBLE_FOUND，COPT 60 秒无 incumbent；
+  产品功能可展示结果，但必须标注"实验性能力，需调度员复核"。
+- **不按节点数简单划界**：18 单的 r201-s101 也出现 insert/rebuild 未找到解；
+  大规模 Kilby 与小规模 Solomon 数据来源、约束特征均不同，适用边界
+  由数据族+约束特征共同决定，而非仅订单数。
+- **NO_FEASIBLE_FOUND 语义**：毫秒级返回表示该算法快速判定无可行解，
+  **不是**问题不可行（仅 COPT proven_infeasible 可称不可行，如 r202-s102）。
+- **算法改进列为后续工作**：insert/rebuild 在大规模与紧时间窗场景的能力
+  提升、60 秒硬截止机制、300 秒 COPT 诊断（预先指定 3 个代表性 dev 大场景、
+  单独成表，不碰 test 集、不并入主比较）——均未在本轮执行。
+
+## 七、图表（由原始结果程序生成）
 
 - `chart_cost_test.png`
 - `chart_feasibility.png`
 - `chart_sensitivity.png`
 
-## 六、复现命令
+## 八、复现命令
 
 ```bat
 .venv\Scripts\python.exe scripts\run_evaluation.py --split all --copt-diag --overwrite
 .venv\Scripts\python.exe scripts\build_evaluation_report.py
 ```
 
-## 七、诚实声明
+## 九、诚实声明
 
 - 成本为模型行驶秒（无真实单价，不报人民币节约）；
-- 物化失败、超时、证明不可行样本全部在上表与失败分布中，未剔除；
+- 物化失败、超时、证明不可行样本全部在上表与失败分布中，未剔除，分母恒定 39；
 - 若某方法无提升，以上配对比较如实呈现，不做选择性报告；
 - **insert 能力边界**：插入法在大场景（kilby 75+ 节点）多为毫秒级返回
   "预算内未找到解"——这是算法快速判定无可行插入位置的真实行为，非运行错误；
   rebuild OR-Tools 同理会在部分紧时间窗场景快速 FAIL（≠证明不可行）；
-- **计时粒度**：耗时以毫秒记录，亚毫秒求解计 0ms；求解器时间限制为软上限，
-  端到端耗时可能略超 60000ms（如 60046ms），如实记录不修正；
+- **计时与预算**：耗时以毫秒记录，亚毫秒求解计 0ms；本轮为 60 秒软预算
+  （无硬截断），越界行见"软预算越界统计"节，如实记录不修正、不归咎于
+  毫秒粒度误差；
 - **LD 用满预算**：low_disruption 的候选池搜索在 60 秒预算内持续改进，
   因此 elapsed 多为 60000ms 左右，属于该方法设计而非异常。
