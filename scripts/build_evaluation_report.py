@@ -68,28 +68,43 @@ def scenario_meta(sid: str, split: str) -> dict:
 
 
 def cap_checks(recs: list[dict]) -> list[dict]:
-    """低扰动行成本上限逐行核验：selected_cost ≤ allowed_cost，
-    或该行已如实标注 no_candidate_within_cost_cap（within_reference_cap=false）。
+    """低扰动行成本上限逐行核验，导出机器可读布尔 within_cap。
+
+    语义（2026-10-11 二次复审）：区分"找到可行路线"与"满足成本上限"——
+    within_cap = (selected ≤ cap × reference) 且未标 no_candidate_within_cost_cap；
+    无解行写 null（不是 ok）；有数值时标记必须等于数值比较（断言进测试）。
     """
     out = []
     for rec in recs:
         for r in rec.get("rows", []):
-            if r["method"] != "low_disruption" or not r.get("has_solution"):
+            if r["method"] != "low_disruption":
                 continue
-            ratio, ref = r.get("cost_cap_ratio"), r.get("reference_best_cost_s")
-            sel = r.get("total_travel_time_s")
-            item = {"scenario_id": rec["scenario_id"], "cap_ratio": ratio,
-                    "reference_best_cost_s": ref, "selected_cost_s": sel,
-                    "allowed_cost_s": None, "verdict": "数据不足"}
-            if ratio is None or ref is None or sel is None:
+            item = {"scenario_id": rec["scenario_id"],
+                    "cap_ratio": r.get("cost_cap_ratio"),
+                    "reference_best_cost_s": r.get("reference_best_cost_s"),
+                    "selected_cost_s": r.get("total_travel_time_s"),
+                    "allowed_cost_s": None, "within_cap": None,
+                    "verdict": None}
+            sel = item["selected_cost_s"]
+            if not r.get("has_solution") or sel is None:
+                item["verdict"] = "无解行(null)"
+                out.append(item)
+                continue
+            ratio, ref = item["cap_ratio"], item["reference_best_cost_s"]
+            if ratio is None or ref is None:
+                item["verdict"] = "数据不足"
                 out.append(item)
                 continue
             allowed = ratio * ref
-            flagged = any("within_reference_cap=false" in w
-                          for w in r.get("warnings", []))
-            within = sel <= allowed + 1e-6
+            numeric_within = sel <= allowed + 1e-6
+            flagged = (r.get("solver_status") == "no_candidate_within_cost_cap"
+                       or any("within_reference_cap=false" in w
+                              for w in r.get("warnings", [])))
+            within = bool(numeric_within and not flagged)
             item["allowed_cost_s"] = round(allowed, 3)
-            item["verdict"] = "ok" if (within or flagged) else "VIOLATION"
+            item["within_cap"] = within
+            item["verdict"] = ("ok" if within == numeric_within
+                               else "VIOLATION")
             out.append(item)
     return out
 
@@ -325,9 +340,17 @@ def main() -> None:
                     "total_travel_time_s", "elapsed_ms", "elapsed_solve_ms",
                     "elapsed_validate_ms", "end_to_end_ms", "validation_ok",
                     "solver_status", "scenario_input_hash", "budget_ms",
-                    "allowed_cost_s", "within_cap"])
+                    "allowed_cost_s", "within_cap", "cap_verdict"])
         caps_ok = cap_checks(recs)
         cap_by_key = {(c["scenario_id"], c["cap_ratio"]): c for c in caps_ok}
+
+        def _cap_cells(ck):
+            if ck is None:
+                return "", "", ""
+            wc = ck["within_cap"]
+            return (ck["allowed_cost_s"] if ck["allowed_cost_s"] is not None else "",
+                    ("TRUE" if wc else "FALSE") if wc is not None else "",
+                    ck["verdict"] or "")
         for rec in recs:
             if rec.get("materialize_error"):
                 w.writerow([rec["scenario_id"], rec.get("split"),
@@ -336,11 +359,12 @@ def main() -> None:
                             rec.get("end_to_end_ms", ""), "",
                             rec["materialize_error"],
                             rec.get("scenario_input_hash", ""),
-                            manifest["budget_ms"], "", ""])
+                            manifest["budget_ms"], "", "", ""])
                 continue
             for row in rec.get("rows", []):
                 ck = cap_by_key.get((rec["scenario_id"],
                                      row.get("cost_cap_ratio")))
+                allowed, within, verdict = _cap_cells(ck)
                 w.writerow([rec["scenario_id"], rec.get("split"),
                             rec.get("n_orders"), row["method"],
                             row.get("backend") or row.get("backend_actual"),
@@ -353,8 +377,7 @@ def main() -> None:
                             row.get("solver_status"),
                             rec.get("scenario_input_hash"),
                             rec.get("budget_ms", manifest["budget_ms"]),
-                            ck["allowed_cost_s"] if ck else "",
-                            ck["verdict"] if ck else ""])
+                            allowed, within, verdict])
 
     # 对账表：每个冻结 ID 的物化状态/失败原因/哈希/是否进入主评测/三方法状态
     recon_rows = []
@@ -468,14 +491,30 @@ def main() -> None:
     n_test_mat = n_mat.get("test", 0)
     n_dev_mat = n_mat.get("dev", 0)
 
-    # 成本上限核验汇总（P1：逐行 best_feasible/allowed/selected）
+    # 成本上限核验汇总（二次复审：布尔 within_cap；无解行=null）
     n_violation = sum(1 for c in caps_ok if c["verdict"] == "VIOLATION")
     n_insufficient = sum(1 for c in caps_ok if c["verdict"] == "数据不足")
-    n_flagged = sum(1 for c in caps_ok
-                    if c["verdict"] == "ok" and c["allowed_cost_s"]
-                    and c["selected_cost_s"] is not None
-                    and c["selected_cost_s"] > c["allowed_cost_s"] + 1e-6)
+    n_null = sum(1 for c in caps_ok if c["within_cap"] is None)
+    n_with_values = sum(1 for c in caps_ok if c["within_cap"] is not None)
+    n_within_true = sum(1 for c in caps_ok if c["within_cap"] is True)
+    n_within_false = sum(1 for c in caps_ok if c["within_cap"] is False)
+    # 主 cap 1.10 超限条数（冻结 test 配置）
+    n_maincap_false = sum(
+        1 for c in caps_ok
+        if c["within_cap"] is False and c["cap_ratio"] == 1.1)
     viol_rows = [c for c in caps_ok if c["verdict"] == "VIOLATION"]
+    # 配对样本数（程序生成，不写死——二次复审文字错误修复）
+    def _paired_count(base: str, cand: str) -> int:
+        n = 0
+        for rec in recs:
+            if rec.get("split") != "test" or rec.get("materialize_error"):
+                continue
+            m = main_rows(rec)
+            a, b = m.get(base), m.get(cand)
+            if a and b and a.get("has_solution") and b.get("has_solution"):
+                n += 1
+        return n
+    n_pair_ir = _paired_count("insert", "rebuild")
 
     # 分层边界证据：按数据来源/时间窗紧度/锁比例/订单规模（可物化子集口径）
     def _bucket_n(n):
@@ -518,7 +557,7 @@ def main() -> None:
         if rec["scenario_id"] == "r202-s102":
             proof = {"hash": rec.get("scenario_input_hash"),
                      "rows": [r for r in rec.get("rows", [])
-                              if r.get("solver_status") == "proven_infeasible"]}
+                              if r.get("status") == "proven_infeasible"]}
 
     # frozen_inputs.json：冻结输入证据（草稿哈希/种子/锁比例/依赖/提交号）
     import platform as _pf
@@ -551,6 +590,8 @@ def main() -> None:
         .isoformat(timespec="seconds"),
         "git_commit": commit,
         "python": py_ver,
+        "freezing_provenance": "事后归档校验：草稿哈希开跑后补记，下一轮"
+                              "将开跑前写入不可变 manifest（二次复审 2026-10-11）",
         "deps": {"ortools": _dep("ortools"), "pydantic": _dep("pydantic"),
                  "pytest": _dep("pytest")},
         "budget_ms": manifest["budget_ms"],
@@ -572,6 +613,15 @@ def main() -> None:
     (EVAL_DIR / "frozen_inputs.json").write_text(
         json.dumps(frozen_inputs, ensure_ascii=False, indent=1),
         encoding="utf-8")
+    try:  # 依赖锁定文件（二次复审：证据链补件）
+        freeze = _sp.run(
+            [str(ROOT / ".venv" / "Scripts" / "python.exe"), "-m", "pip",
+             "freeze"], capture_output=True, text=True, timeout=60)
+        if freeze.returncode == 0 and freeze.stdout.strip():
+            (EVAL_DIR / "requirements_lock.txt").write_text(
+                freeze.stdout, encoding="utf-8")
+    except Exception:
+        pass
     report = f"""# 阶段 6 评测报告（60 秒软预算版）
 
 - 生成时间：{__import__('datetime').datetime.now().isoformat(timespec='seconds')}
@@ -582,6 +632,10 @@ def main() -> None:
   其中 {len(mat_fail_rows)} 个场景在"原计划物化"阶段失败（dev {n_dev_mat} +
   test {n_test_mat}，原因见下表），未进入三方法比较，但保留在分母与清单中，
   不静默剔除。
+- **冻结性质（如实降级，二次复审）**：本轮清单在开跑前冻结（frozen_at 见
+  manifest），但每场景草稿哈希为**事后归档校验**（开跑后补记，时间差约
+  2 小时 23 分），不能单独证明输入在开跑前已锁定；**下一轮将开跑前把
+  草稿 SHA-256 写入不可变 manifest 再跑**。
 - **预算口径（修正）**：本轮为 **60 秒软预算评测**——求解器时间限制为软上限、
   无独立进程硬截断，**不得宣传为严格同预算**。越界行如实保留并统计如下；
   正式版将以独立进程（或等效机制）执行硬截断，并记录请求预算/实际耗时/超时状态。
@@ -629,17 +683,21 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 - {paired(recs, 'test', 'rebuild', 'low_disruption')}
 - {paired(recs, 'test', 'insert', 'rebuild')}
 
-配对样本少（如 insert×rebuild 仅 5 个），成本优势结论仅限该配对子集，
+配对样本少（insert×rebuild 双双可行的测试样本仅 {n_pair_ir} 个，程序计数），
+成本优势结论仅限该配对子集，
 不得推断总体节约；`chart_cost_diff.png` 为配对成本差可视化。
 
-## 三·补、成本上限逐行核验（P1）
+## 三·补、成本上限逐行核验（布尔 within_cap）
 
-低扰动全部 {len(caps_ok)} 个已求解行逐行核验
-`selected_cost ≤ allowed_cost(=cap_ratio × reference_best_cost)`：
-**违规 {n_violation} 行**；未超上限 {len(caps_ok) - n_violation - n_insufficient - n_flagged} 行；
-超上限但已如实标注 `within_reference_cap=false`（no_candidate_within_cost_cap）
-{n_flagged} 行；数据不足 {n_insufficient} 行。
-{('违规明细：' + '; '.join(f"{c['scenario_id']}(cap={c['cap_ratio']}, sel={c['selected_cost_s']}, allowed={c['allowed_cost_s']})" for c in viol_rows)) if viol_rows else '逐行明细见 summary.csv 的 allowed_cost_s / within_cap 列。'}
+低扰动 {len(caps_ok)} 行逐行核验（机器可读字段，可由 raw 重新导出）：
+有数值行 {n_with_values} 条——within_cap=TRUE {n_within_true} 条、
+**within_cap=FALSE {n_within_false} 条**（找到可行路线但未满足成本上限，
+solver_status=no_candidate_within_cost_cap，**不计入达标可行率**）；
+无解行 {n_null} 条（null，不写作 ok）；数据不足 {n_insufficient} 条；
+字段与数值不一致（VIOLATION）{n_violation} 条。
+**冻结主配置 cap=1.10 超限 {n_maincap_false} 条**（测试集 15/15 可行的
+"可行"均含 within_cap=TRUE 含义，达标口径需在引用时同时给出两列）。
+{('违规明细：' + '; '.join(f"{c['scenario_id']}(cap={c['cap_ratio']}, sel={c['selected_cost_s']}, allowed={c['allowed_cost_s']})" for c in viol_rows)) if viol_rows else '逐行明细见 summary.csv 的 allowed_cost_s / within_cap / cap_verdict 列。'}
 注意：reference_best 来自跨方法已验证方案；其缺失时上限基准回退为候选池
 最优并标注 pool_fallback（dev 集 kilby 场景多为此类），见 raw 行 warnings。
 
@@ -649,7 +707,8 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 
 说明：COPT 在 75+ 节点 60 秒无 incumbent 记为 no_feasible_found（≠不可行）；
 OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之一）。
-**r202-s102 的 COPT 不可行证明仅针对该输入与 COPT 建模**：输入哈希
+**r202-s102 为"COPT 对当前 MIP 模型报告 MIP_INFEASIBLE"**，仅针对该输入、
+该建模与该求解器版本，**不得扩展为原始业务问题不可行**：输入哈希
 `{(proof.get('hash') or '—')[:16]}…`；证明行求解器版本
 {[r.get('solver_version') for r in proof.get('rows', [])]}；独立校验器未采信
 该结论以外的任何求解器状态。

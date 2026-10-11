@@ -1,7 +1,8 @@
 {
- "generated_at": "2026-10-11T16:05:52",
- "git_commit": "9162ab71db178c6fe3a9c6daf33b2e05551c4837",
+ "generated_at": "2026-10-11T16:43:07",
+ "git_commit": "9158c98b9f131e0556254f5ba9af06b8681112af",
  "python": "3.12.7",
+ "freezing_provenance": "事后归档校验：草稿哈希开跑后补记，下一轮将开跑前写入不可变 manifest（二次复审 2026-10-11）",
  "deps": {
   "ortools": "9.14.6206",
   "pydantic": "2.14.0",

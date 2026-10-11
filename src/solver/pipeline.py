@@ -39,13 +39,16 @@ METHODS = ("insert", "rebuild", "low_disruption")
 # 无 COPT 环境插单/低扰动/OR-Tools 照常可用。
 
 
-def _solver_version(method: str) -> str:
+def _solver_version(method: str, backend: str | None = None) -> str:
     if method == "rebuild":
-        try:
-            from .copt_core import SOLVER_VERSION_COPT
-            return SOLVER_VERSION_COPT
-        except ImportError:
-            return "stage2-copt-unavailable"
+        # 按实际后端分别记录（2026-10-11 复审）：默认 OR-Tools，COPT 显式指定
+        if (backend or "ortools").lower() == "copt":
+            try:
+                from .copt_core import SOLVER_VERSION_COPT
+                return SOLVER_VERSION_COPT
+            except ImportError:
+                return "stage2-copt-unavailable"
+        return SOLVER_VERSION  # ortools_core：stage2-ortools-9.14.6206
     if method == "low_disruption":
         return "stage3-low-disruption/1.0"
     return "stage2-insert-enum/1.0"
@@ -87,6 +90,7 @@ def _assemble(
     warnings: list[str],
     assumptions: list[str],
     extra_metrics: dict | None = None,
+    backend: str | None = None,
 ) -> SolveResult:
     schedule: list[StopSchedule] = []
     if validation is not None:
@@ -98,7 +102,7 @@ def _assemble(
     return SolveResult(
         input_hash=input_hash(scn),
         config={"method": method, "time_limit_ms": time_limit_ms},
-        solver_version=_solver_version(method),
+        solver_version=_solver_version(method, backend),
         elapsed_ms=int((time.monotonic() - started) * 1000),
         status=status,
         routes=routes,
@@ -191,6 +195,7 @@ def solve(
                         assumptions=[],
                         extra_metrics={"backend_requested": "copt",
                                        "backend": None},
+                        backend="copt",
                     )
                     return SolveOutcome(result=result, validation=None)
             t_solve = time.monotonic()
@@ -225,6 +230,7 @@ def solve(
                                    "backend_requested": use_backend,
                                    "status_detail": outcome.status_detail,
                                    "elapsed_solve_ms": solve_ms},
+                    backend=use_backend,
                 )
                 return SolveOutcome(result=result, validation=None)
             if not accepted:
@@ -243,6 +249,7 @@ def solve(
                                    "backend_requested": use_backend,
                                    "status_detail": outcome.status_detail,
                                    "elapsed_solve_ms": solve_ms},
+                    backend=use_backend,
                 )
                 return SolveOutcome(result=result, validation=None)
             routes = rebuild_mod.outcome_to_routes(scn, outcome)
@@ -342,6 +349,7 @@ def solve(
     result = _assemble(
         scn, method, time_limit_ms, started, SolveStatus.FEASIBLE,
         routes, validation, warnings, assumptions, extra_metrics=extra,
+        backend=(use_backend if method == "rebuild" else None),
     )
     if method == "low_disruption":
         result = result.model_copy(

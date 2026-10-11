@@ -108,9 +108,75 @@ def test_summary_covers_all_manifest_scenarios():
         assert r["budget_ms"] == str(manifest["budget_ms"])
     # 每个场景至少有一行，且预算列无空缺
     assert all(r["budget_ms"] for r in rows)
-    # 成本上限核验列存在且无违规（P1：selected ≤ allowed 或已如实标注）
+    # 成本上限核验（二次复审）：布尔 within_cap，可由 raw 重新导出且无违规
     assert "allowed_cost_s" in rows[0] and "within_cap" in rows[0]
-    assert not [r for r in rows if r["within_cap"] == "VIOLATION"]
+    assert not [r for r in rows if r["cap_verdict"] == "VIOLATION"]
+
+
+def test_within_cap_boolean_semantics():
+    """二次复审验收③：60 条有数值 LD 记录中 6 条超限均标 FALSE；
+    主 cap=1.10 超限 0 条；无解行 within_cap 为空（null，不写 ok）；
+    有数值时标记必须等于 cost ≤ cap × reference（由 raw 重算验证）。"""
+    import csv as _csv
+    eval_dir = ROOT / "reports" / "evaluation6"
+    raw_dir = eval_dir / "raw"
+    rows = list(_csv.DictReader(
+        open(eval_dir / "summary.csv", encoding="utf-8-sig")))
+    ld = [r for r in rows if r["method"] == "low_disruption"]
+    with_vals, no_sol, false_rows = [], [], []
+    for r in ld:
+        # 由 raw 重新导出（验收④）
+        raw = json.loads((raw_dir / f"{r['scenario_id']}.json")
+                         .read_text(encoding="utf-8"))
+        raw_row = next(x for x in raw["rows"]
+                       if x["method"] == "low_disruption"
+                       and str(x.get("cost_cap_ratio")) == r["cost_cap_ratio"])
+        if not raw_row.get("has_solution"):
+            no_sol.append(r)
+            assert r["within_cap"] == "", ("无解行必须 null", r)
+            continue
+        sel, ratio, ref = (raw_row["total_travel_time_s"],
+                           raw_row["cost_cap_ratio"],
+                           raw_row["reference_best_cost_s"])
+        assert sel is not None and ratio is not None and ref is not None
+        numeric_within = sel <= ratio * ref + 1e-6
+        with_vals.append((r, numeric_within))
+        if not numeric_within:
+            false_rows.append(r)
+            assert r["within_cap"] == "FALSE", ("超限必须 FALSE", r)
+        else:
+            assert r["within_cap"] == "TRUE", ("未超必须 TRUE", r)
+        assert float(r["total_travel_time_s"]) == float(sel)
+    assert len(with_vals) == 60, len(with_vals)
+    assert len(false_rows) == 6, len(false_rows)
+    assert not [r for r in false_rows if r["cost_cap_ratio"] == "1.1"]
+
+
+def test_freezing_provenance_disclosed():
+    """二次复审验收⑥：未补齐前置冻结证据时报告显式说明本轮为事后归档。"""
+    eval_dir = ROOT / "reports" / "evaluation6"
+    report = (eval_dir / "evaluation_report.md").read_text(encoding="utf-8")
+    assert "事后归档校验" in report
+    fi = json.loads((eval_dir / "frozen_inputs.json")
+                    .read_text(encoding="utf-8"))
+    assert "事后归档" in fi["freezing_provenance"]
+    assert (eval_dir / "requirements_lock.txt").is_file()
+
+
+def test_testset_main_rates_unchanged():
+    """二次复审验收②：主方法 test 口径保持 4/16、5/16、15/16（冻结集口径）。"""
+    import csv as _csv
+    eval_dir = ROOT / "reports" / "evaluation6"
+    rows = list(_csv.DictReader(
+        open(eval_dir / "summary.csv", encoding="utf-8-sig")))
+    test_ids = {r["scenario_id"] for r in rows if r["split"] == "test"}
+    assert len(test_ids) == 16
+    rates = {}
+    for meth in ("insert", "rebuild", "low_disruption"):
+        ok = sum(1 for r in rows if r["split"] == "test"
+                 and r["method"] == meth and r["status"] == "feasible")
+        rates[meth] = ok
+    assert rates == {"insert": 4, "rebuild": 5, "low_disruption": 15}, rates
 
 
 def test_fixedpool_sensitivity_dev_complete():

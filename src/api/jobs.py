@@ -204,7 +204,16 @@ class JobQueue:
         tmp = self.jobs_dir / f"{meta['job_id']}.json.tmp-{os.getpid()}"
         tmp.write_text(json.dumps(meta, ensure_ascii=False, indent=1),
                        encoding="utf-8")
-        os.replace(tmp, self.jobs_dir / f"{meta['job_id']}.json")
+        # Windows 下杀软/索引器可能短暂占用目标文件导致 replace 拒绝访问：
+        # 短暂重试而非直接失败（worker 循环崩掉会让队列卡死）
+        for attempt in range(5):
+            try:
+                os.replace(tmp, self.jobs_dir / f"{meta['job_id']}.json")
+                return
+            except PermissionError:
+                if attempt == 4:
+                    raise
+                time.sleep(0.1 * (attempt + 1))
 
     def _all_jobs(self) -> list[dict]:
         out = []
