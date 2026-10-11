@@ -1,0 +1,5 @@
+{
+ "scenario_id": "c101-s102",
+ "materialize_error": "ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试）",
+ "rows": []
+}

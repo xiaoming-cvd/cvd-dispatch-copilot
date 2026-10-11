@@ -1,0 +1,374 @@
+{
+ "frozen_at": "2026-10-11T05:42:36.329658+00:00",
+ "budget_ms": 60000,
+ "methods": [
+  "insert",
+  "rebuild",
+  "low_disruption"
+ ],
+ "rebuild_backend_main": "ortools",
+ "cost_cap_ratio": 1.1,
+ "sensitivity_caps_dev_only": [
+  1.05,
+  1.2
+ ],
+ "copt_diagnostic": "dev 集 rebuild backend=copt，单独成表",
+ "status_semantics": {
+  "TIMEOUT/NO_FEASIBLE_FOUND": "不等于不可行",
+  "OR-Tools FEASIBLE": "不等于证明最优",
+  "PROVEN_INFEASIBLE": "仅 COPT MIP 可给出"
+ },
+ "scenarios": [
+  {
+   "scenario_id": "c101-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "C101",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "c101-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "C101",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "c102-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "C102",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "c102-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "C102",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "c201-s201",
+   "split": "test",
+   "source": "solomon",
+   "base_instance": "C201",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "c202-s201",
+   "split": "test",
+   "source": "solomon",
+   "base_instance": "C202",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r101-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R101",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r101-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R101",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r102-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R102",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r102-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R102",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r201-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R201",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r201-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R201",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r202-s101",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R202",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "r202-s102",
+   "split": "dev",
+   "source": "solomon",
+   "base_instance": "R202",
+   "seed": 102,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "rc101-s201",
+   "split": "test",
+   "source": "solomon",
+   "base_instance": "RC101",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "rc201-s201",
+   "split": "test",
+   "source": "solomon",
+   "base_instance": "RC201",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "rc202-s201",
+   "split": "test",
+   "source": "solomon",
+   "base_instance": "RC202",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai385-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai385",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c100-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-c100",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c100b-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-c100b",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c120-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-c120",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c150-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-c150",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c199-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-c199",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c50-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-c50",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-c75-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-c75",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-f134-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-f134",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-f71-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-f71",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai100a-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai100a",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai100b-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai100b",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai100c-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai100c",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai100d-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai100d",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai150a-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai150a",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai150b-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai150b",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai150c-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai150c",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai150d-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai150d",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai75a-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai75a",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai75b-s101",
+   "split": "dev",
+   "source": "kilby",
+   "base_instance": "kilby-tai75b",
+   "seed": 101,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai75c-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai75c",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  },
+  {
+   "scenario_id": "kilby-tai75d-s201",
+   "split": "test",
+   "source": "kilby",
+   "base_instance": "kilby-tai75d",
+   "seed": 201,
+   "lock_ratio_target": null,
+   "n_new_orders": null
+  }
+ ]
+}

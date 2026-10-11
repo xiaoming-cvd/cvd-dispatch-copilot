@@ -1,6 +1,6 @@
 # docs/handoff.md — 阶段交接记录
 
-## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）（2026-10-11）
+## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）（2026-10-11）
 
 > **阶段 4 v2（第四阶段跨电脑复审，2026-10-11）**：复审结论"有条件通过代码骨架"。
 > P0-1（显式 decisions 只接受所列项）+ P0-2（source_text 必须是原文子串，伪造依据
@@ -219,13 +219,37 @@ cd C:\Users\tianj\Desktop\城配调度副驾
   Amazon 原始数据不入库（`docs/amazon_field_mapping.md` + 合成样例）。
 - 演示模式可全流程操作（mock LLM 明确标注，不冒充真实模型）。
 
-## 下一阶段所需输入（阶段 6 冻结评测）
+## 阶段 6 完成状态（2026-10-11 冻结评测，待队长验收）
 
-- 评测机环境确认：无 COPT 许可也可跑（rebuild 默认 OR-Tools）；COPT 仅用于
-  小规模最优性/不可行性验证与 300 秒诊断实验（单独成表，不混入主比较）。
+- **规模**：39 个冻结场景全部跑完（dev 24 + test 15），raw 逐场景落盘
+  `reports/evaluation6/raw/*.json`（39 个文件），`summary.csv` 141 行，
+  报告 `reports/evaluation6/evaluation_report.md` + 3 张程序生成图
+  （chart_cost_test / chart_feasibility / chart_sensitivity）。
+- **口径（冻结，见 `frozen_manifest.json`）**：三方法（insert / rebuild /
+  low_disruption）统一 60 秒端到端预算；test 集 LD cost_cap=1.10；
+  dev 集附加 COPT 60s 诊断与 LD cap 1.05/1.20 敏感性（单独成表）；
+  超时记 TIMEOUT_NO_SOLUTION（≠不可行）；OR-Tools 可行 ≠ 证明最优。
+- **关键结果**：test 集 LD 15/15 可行（cap 1.10 内），insert 4/15、
+  rebuild（OR-Tools）5/15；dev 集 LD 15/16；r202-s102 全方法无解且
+  COPT `proven_infeasible` 佐证——如实记录。insert/rebuild 在 kilby 大场景
+  毫秒级 FAIL 是真实算法行为，已在报告"诚实声明"节写明，未粉饰。
+- **每行数据含**：scenario_id/split/method/backend/请求与有效预算/耗时
+  （requested/effective/materialize/solve/validate/total/timed_out）/状态/
+  has_solution/validation_ok/输入与快照哈希/成本与差距指标。
+- **复现**：`./.venv/Scripts/python.exe scripts/run_evaluation.py --split all
+  --copt-diag`（大场景每方法跑满 60s，需逐场景分批跑，单批 ≤300s），
+  报告 `./.venv/Scripts/python.exe scripts/build_evaluation_report.py`。
+- **测试**：新增 runner 冒烟测试 2 条（含物化异常如实记录 materialize_error），
+  全量 327 passed。
+- **可选项（未执行，待确认）**：300 秒 COPT 诊断实验（决策允许，单独成表；
+  成本约每场景 5 分钟 × 多场景）。
+
+## 下一阶段所需输入（阶段 7 交付整理）
+
+- 阶段 6 验收结论（若需 300s COPT 诊断实验，确认场景范围）。
 - LLM_MODEL 交付前按目标接口复验（当前实测 `deepseek-flash`；不写不存在的
   DeepSeek-V4.1-Flash）。
-- 阶段 6 分别报告 COPT 与 OR-Tools 结果；不隐藏无解、不混算不同预算或后端。
+- 阶段 7 打包范围确认：是否含原始受限数据（默认不含，仅映射文档+合成样例）。
 
 ## 已决事项（2026-10-11 队长决策）
 
