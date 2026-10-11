@@ -294,7 +294,23 @@ cd C:\Users\tianj\Desktop\城配调度副驾
   版本问题（每行 scenario_version 落盘可核）。
 - 测试：328 passed（新增 summary↔清单 39 场景对齐断言）。
 
-## 下一阶段所需输入（阶段 7 交付整理）
+## 阶段 7 交付整理（2026-10-11，进行中待验收）
+
+- **文档交付**：README（已实现/模拟/未实现 + 交付索引）、docs/ 下
+  architecture（模块说明与数据流）、field_dictionary、algorithms、
+  data_licenses、testing、known_limitations、demo_script、
+  delivery_checklist（检查清单+私有仓库文件清单）。
+- **干净环境验证**（reports/stage7_clean_env_log.txt）：独立 venv 按
+  requirements.txt 全新安装 → **326 passed + 6 skipped**（COPT 用例
+  importorskip，无许可可移植）→ serve.py 冒烟（health 200 / 前端 200）
+  → CLI 演示闭环退出码 0。验证发现并修复 2 个可移植性问题：
+  requirements.txt 补 httpx==0.28.1；serve.py 自加项目根到 sys.path。
+- **未执行（待确认）**：私有远端创建与推送（待队长确认）；总工"冻结
+  评测完成"最终验收；下一轮前置冻结（开跑前写入草稿哈希到不可变
+  manifest）+ 300s COPT 诊断（指定 3 个 dev 大场景）+ 进程硬截止。
+- 测试：开发 venv 332 passed；干净 venv 326 passed + 6 skipped。
+
+## 下一阶段所需输入（阶段 7 收尾）
 
 - 阶段 6 验收结论（若需 300s COPT 诊断实验，确认场景范围）。
 - LLM_MODEL 交付前按目标接口复验（当前实测 `deepseek-flash`；不写不存在的

@@ -13,8 +13,14 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
 
 import uvicorn
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:  # 干净环境直接运行可用（不依赖隐式 PYTHONPATH）
+    sys.path.insert(0, str(ROOT))
 
 
 def main() -> None:

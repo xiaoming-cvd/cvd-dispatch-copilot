@@ -126,6 +126,7 @@ class TestRebuildBaseline:
         assert outcome.validation is not None and outcome.validation.ok
 
     def test_proven_infeasible_when_capacity_insufficient(self):
+        pytest.importorskip("coptpy")  # 无 COPT 许可环境跳过（干净环境可移植）
         # 总需求 7 > 总容量 6（V1=4 装 o1+o2，V2=2 装 o3；新任务 o4 无处可放）：
         # COPT 应证明 MIP 不可行（OR-Tools CP 对该类情形只返回 FAIL，无法证明）。
         # 2026-10-11 决策：rebuild 默认 OR-Tools，证明不可行须显式 backend="copt"。
@@ -139,6 +140,7 @@ class TestRebuildBaseline:
         assert outcome.result.status == SolveStatus.PROVEN_INFEASIBLE
 
     def test_locks_can_make_rebuild_infeasible(self):
+        pytest.importorskip("coptpy")  # 无 COPT 许可环境跳过（干净环境可移植）
         # 同一车上两组矛盾的相对顺序锁：[o1,o2] 与 [o2,o1]
         # （均由旧任务组成，单独都存在、合并即循环，时间链不可能同时成立）
         # → 锁定导致的证明无解，而非超时
