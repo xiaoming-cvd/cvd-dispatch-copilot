@@ -1,0 +1,14 @@
+{
+  "R01_closed_loop": {
+    "exhaustive_optimal": 5,
+    "solver_status": "feasible",
+    "solver_travel": 5,
+    "match": true
+  },
+  "R02_bigM": {
+    "exhaustive_optimal": 3,
+    "solver_status": "feasible",
+    "solver_travel": 3,
+    "match": true
+  }
+}

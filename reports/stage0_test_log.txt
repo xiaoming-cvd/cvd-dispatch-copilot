@@ -1,0 +1,59 @@
+== 环境 ==
+Python 3.12.7
+fastapi==0.143.0
+pydantic==2.14.0
+pydantic_core==2.50.0
+pytest==9.1.1
+uvicorn==0.54.0
+
+== 测试结果 ==
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\tianj\Desktop\城配调度副驾
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 39 items
+
+tests/test_checks.py::TestValidBaseline::test_minimal_valid_scenario PASSED [  2%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_duplicate_order_id PASSED [  5%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_duplicate_vehicle_id PASSED [  7%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_order_node_not_in_matrix PASSED [ 10%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_depot_not_in_matrix PASSED [ 12%]
+tests/test_checks.py::TestPlanConsistency::test_missing_old_order_is_rejected PASSED [ 15%]
+tests/test_checks.py::TestPlanConsistency::test_duplicate_plan_order PASSED [ 17%]
+tests/test_checks.py::TestPlanConsistency::test_new_order_in_plan_rejected PASSED [ 20%]
+tests/test_checks.py::TestPlanConsistency::test_unknown_order_in_plan PASSED [ 23%]
+tests/test_checks.py::TestPlanConsistency::test_unknown_vehicle_in_plan PASSED [ 25%]
+tests/test_checks.py::TestLocks::test_lock_on_new_order_rejected PASSED  [ 28%]
+tests/test_checks.py::TestLocks::test_lock_unknown_vehicle PASSED        [ 30%]
+tests/test_checks.py::TestLocks::test_assignment_vs_relative_conflict PASSED [ 33%]
+tests/test_checks.py::TestLocks::test_consistent_locks_pass PASSED       [ 35%]
+tests/test_models.py::TestOrder::test_window_inversion_rejected PASSED   [ 38%]
+tests/test_models.py::TestOrder::test_equal_window_allowed PASSED        [ 41%]
+tests/test_models.py::TestOrder::test_negative_demand_rejected PASSED    [ 43%]
+tests/test_models.py::TestOrder::test_negative_service_rejected PASSED   [ 46%]
+tests/test_models.py::TestOrder::test_missing_weight_not_zero PASSED     [ 48%]
+tests/test_models.py::TestOrder::test_frozen PASSED                      [ 51%]
+tests/test_models.py::TestVehicle::test_return_before_depart_rejected PASSED [ 53%]
+tests/test_models.py::TestVehicle::test_zero_capacity_rejected PASSED    [ 56%]
+tests/test_models.py::TestTravelMatrix::test_valid_matrix PASSED         [ 58%]
+tests/test_models.py::TestTravelMatrix::test_asymmetric_allowed PASSED   [ 61%]
+tests/test_models.py::TestTravelMatrix::test_row_count_mismatch PASSED   [ 64%]
+tests/test_models.py::TestTravelMatrix::test_row_length_mismatch PASSED  [ 66%]
+tests/test_models.py::TestTravelMatrix::test_negative_travel_rejected PASSED [ 69%]
+tests/test_models.py::TestTravelMatrix::test_nonzero_diagonal_rejected PASSED [ 71%]
+tests/test_models.py::TestTravelMatrix::test_zero_off_diagonal_rejected_as_missing_edge PASSED [ 74%]
+tests/test_models.py::TestTravelMatrix::test_duplicate_node_rejected PASSED [ 76%]
+tests/test_models.py::TestScenarioUnits::test_time_unit_conflict_rejected PASSED [ 79%]
+tests/test_models.py::TestScenarioUnits::test_time_origin_without_tz_rejected PASSED [ 82%]
+tests/test_models.py::TestLocksModel::test_relative_order_lock_min_two PASSED [ 84%]
+tests/test_models.py::TestLocksModel::test_locks_default_empty PASSED    [ 87%]
+tests/test_models.py::TestHash::test_hash_stable_and_sensitive PASSED    [ 89%]
+tests/test_sample.py::TestSample::test_sample_passes_validation PASSED   [ 92%]
+tests/test_sample.py::TestSample::test_sample_hand_computed_schedule PASSED [ 94%]
+tests/test_sample.py::TestSample::test_committed_sample_file_matches PASSED [ 97%]
+tests/test_sample.py::TestSample::test_schema_exported PASSED            [100%]
+
+============================= 39 passed in 0.18s ==============================

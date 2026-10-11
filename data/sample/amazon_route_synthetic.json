@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "note": "合成结构样本：按 MIT CAVE rc-cli 公开字段字典手工构造，非 Amazon 真实数据；仅用于解析器测试",
+    "license": "真实 Amazon Last Mile 数据为 CC BY-NC 4.0（非商用），本合成样本不受其约束但格式对齐"
+  },
+  "route_id": "RouteSynthetic-1",
+  "executor_capacity": { "volume_capacity_cm3": 4000000 },
+  "stops": {
+    "depot": {
+      "id": "depot", "type": "depot", "lat": 47.6, "lng": -122.3,
+      "time_window": { "start_time_utc": "1970-01-01T08:00:00Z", "end_time_utc": "1970-01-01T16:00:00Z" },
+      "planned_service_time_seconds": 0,
+      "packages": {}
+    },
+    "stop-A": {
+      "id": "stop-A", "type": "dropoff", "lat": 47.61, "lng": -122.31,
+      "time_window": { "start_time_utc": "1970-01-01T09:00:00Z", "end_time_utc": "1970-01-01T12:00:00Z" },
+      "planned_service_time_seconds": 180,
+      "packages": {
+        "pkg-1": { "dimensions": { "height_cm": 30, "width_cm": 20, "depth_cm": 10 } },
+        "pkg-2": { "dimensions": { "height_cm": 40, "width_cm": 25, "depth_cm": 15 } }
+      }
+    },
+    "stop-B": {
+      "id": "stop-B", "type": "dropoff", "lat": 47.62, "lng": -122.29,
+      "time_window": null,
+      "planned_service_time_seconds": 120,
+      "packages": {
+        "pkg-3": { "dimensions": { "height_cm": 50, "width_cm": 30, "depth_cm": 20 } }
+      }
+    }
+  },
+  "travel_times": {
+    "depot": { "stop-A": 600, "stop-B": 900 },
+    "stop-A": { "depot": 620, "stop-B": 300 },
+    "stop-B": { "depot": 880, "stop-A": 310 }
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "script": "check_base_fingerprint/1.0",
+  "basis": "(x, y, demand) 客户键集合的 Jaccard 重合度",
+  "threshold": 0.8,
+  "instances": {
+    "C101": {
+      "sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
+      "n_customers": 100
+    },
+    "C102": {
+      "sha256": "3c1a50d7c6355ae128b6ab26564712b0f66990215cc15bcc4ea0909c66da852a",
+      "n_customers": 100
+    },
+    "C201": {
+      "sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
+      "n_customers": 100
+    },
+    "C202": {
+      "sha256": "93b69133788a852db97f032dba948376a0fcebdffe32cfcd5f8155bb7c676e34",
+      "n_customers": 100
+    },
+    "R101": {
+      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "n_customers": 100
+    },
+    "R102": {
+      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "n_customers": 100
+    },
+    "R201": {
+      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "n_customers": 100
+    },
+    "R202": {
+      "sha256": "3552aa95e29ffd66d8519e176ca86c222b8b2682bb9b996ceee077a25838aa62",
+      "n_customers": 100
+    },
+    "RC101": {
+      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "n_customers": 100
+    },
+    "RC201": {
+      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "n_customers": 100
+    },
+    "RC202": {
+      "sha256": "36224d742c7b15ab87118cd49029b6a8f6de00ed9cd2d4d41f474dc84c7d2d7d",
+      "n_customers": 100
+    }
+  },
+  "pairs": [
+    {
+      "pair": [
+        "C101",
+        "C102"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "C101",
+        "C201"
+      ],
+      "jaccard_xy_demand": 0.5625,
+      "shared_keys": 72,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "C202"
+      ],
+      "jaccard_xy_demand": 0.5625,
+      "shared_keys": 72,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "R101"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "R102"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "R201"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "R202"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C101",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "C201"
+      ],
+      "jaccard_xy_demand": 0.5625,
+      "shared_keys": 72,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "C202"
+      ],
+      "jaccard_xy_demand": 0.5625,
+      "shared_keys": 72,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "R101"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "R102"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "R201"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "R202"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C102",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.25,
+      "shared_keys": 40,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "C202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "C201",
+        "R101"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "R102"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "R201"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "R202"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C201",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "R101"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "R102"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "R201"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "R202"
+      ],
+      "jaccard_xy_demand": 0.0,
+      "shared_keys": 0,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "C202",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.2048,
+      "shared_keys": 34,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R101",
+        "R102"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R101",
+        "R201"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R101",
+        "R202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R101",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R101",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R101",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R102",
+        "R201"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R102",
+        "R202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R102",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R102",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R102",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R201",
+        "R202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "R201",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R201",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R201",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R202",
+        "RC101"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R202",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "R202",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 0.3333,
+      "shared_keys": 50,
+      "flag": "ok"
+    },
+    {
+      "pair": [
+        "RC101",
+        "RC201"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "RC101",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    },
+    {
+      "pair": [
+        "RC201",
+        "RC202"
+      ],
+      "jaccard_xy_demand": 1.0,
+      "shared_keys": 100,
+      "flag": "高重合风险"
+    }
+  ]
+}

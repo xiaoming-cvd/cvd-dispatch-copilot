@@ -1,0 +1,14 @@
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_review_p0p1.py::TestDuplicateVehicleRoutes::test_rejected
+FAILED tests/test_review_p0p1.py::TestRelativeLockMembers::test_member_on_other_vehicle_rejected
+FAILED tests/test_review_p0p1.py::TestRelativeLockMembers::test_member_missing_rejected
+FAILED tests/test_review_p0p1.py::TestReturnTimeConsistency::test_fake_return_s_rejected
+FAILED tests/test_review_p0p1.py::TestClosedLoopObjective::test_optimum_matches_exhaustive
+FAILED tests/test_review_p0p1.py::TestBigM::test_not_falsely_infeasible - Ass...
+FAILED tests/test_review_p0p1.py::TestZeroTimeSameLocation::test_no_broken_cycle
+FAILED tests/test_review_p0p1.py::TestNoCoptIsolation::test_pipeline_imports_and_insert_runs_without_coptpy
+FAILED tests/test_review_p0p1.py::TestStatusMapping::test_feasible_not_optimal_kept
+FAILED tests/test_review_p0p1.py::TestStatusMapping::test_validator_rejected_distinct
+FAILED tests/test_review_p0p1.py::TestBudgetPassed::test_insert_respects_deadline
+================== 11 failed, 7 passed, 3 warnings in 0.61s ===================

@@ -1,0 +1,58 @@
+{
+  "scenario_id": "kilby-tai75b-s101",
+  "input_hash": "488716e2524471cbad9250085b5a48c2ac583093fc310c469d4ede5ec1615e68",
+  "time_limit_ms": 60000,
+  "cost_cap_ratio": 1.1,
+  "methods": [
+    {
+      "method": "insert",
+      "status": "no_feasible_found",
+      "input_hash": "488716e2524471cbad9250085b5a48c2ac583093fc310c469d4ede5ec1615e68",
+      "solver_version": "stage2-insert-enum/1.0",
+      "termination": null,
+      "total_travel_time_s": null,
+      "elapsed_ms": 0,
+      "elapsed_solve_ms": 0,
+      "validation_ok": false,
+      "warnings": [
+        "插单基线未找到可行插入位置（枚举未覆盖搬动旧任务，不代表问题被证明无解，可尝试 rebuild 方法）"
+      ]
+    },
+    {
+      "method": "rebuild",
+      "status": "no_feasible_found",
+      "input_hash": "488716e2524471cbad9250085b5a48c2ac583093fc310c469d4ede5ec1615e68",
+      "solver_version": "stage2-copt-8.0.6",
+      "termination": "MIP_TIMEOUT_NO_SOL",
+      "total_travel_time_s": null,
+      "elapsed_ms": 62687,
+      "elapsed_solve_ms": 62562,
+      "validation_ok": false,
+      "warnings": [
+        "求解器状态 MIP_TIMEOUT_NO_SOL（termination=timeout）或方案未覆盖全部订单（served=0/75）；未找到可行解 ≠ 证明无解"
+      ]
+    },
+    {
+      "method": "low_disruption",
+      "status": "feasible",
+      "input_hash": "488716e2524471cbad9250085b5a48c2ac583093fc310c469d4ede5ec1615e68",
+      "solver_version": "stage3-low-disruption/1.0",
+      "termination": "selected",
+      "total_travel_time_s": 2177,
+      "elapsed_ms": 60000,
+      "elapsed_solve_ms": null,
+      "validation_ok": true,
+      "warnings": [],
+      "vehicle_changes": 0,
+      "adjacency_breaks": 0,
+      "pool_best_cost_s": 2158,
+      "reference_best_cost_s": 2158,
+      "reference_source": "pool_fallback(未提供跨方法参考，上限仅相对本方法候选池)",
+      "cost_cap_ratio": 1.1,
+      "cost_cap_s": 2373.8,
+      "within_reference_cap": true,
+      "candidate_count": 100,
+      "search_stop_reason": "frontier_exhausted"
+    }
+  ]
+}

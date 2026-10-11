@@ -1,0 +1,9 @@
+{
+  "reason": "旧划分（布局感知修复前）遗留的草稿，registry.json 未引用；",
+  "action": "移至 _stale_20261011 归档而非删除，可回溯；",
+  "files": {
+    "c202-s101.json": "fa30daa3e92aaff8d711ee478f6bede4e92c6fdf73ed7833d31c05487aa8b334",
+    "c202-s102.json": "c40c55baefb8e4b3011e3db9ab8dbf6604ffdc7100980266f990c2185f2916ee",
+    "r202-s201.json": "4d33e806d6ee1fe23af5af30d59b3abda316a092e3cd4baddfe4d3541c520264"
+  }
+}

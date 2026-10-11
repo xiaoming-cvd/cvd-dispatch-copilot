@@ -1,0 +1,30 @@
+{
+  "status": "draft",
+  "draft": {
+    "draft_id": "draft-3e9a9684e0ab0aa1",
+    "scenario_id": "sample-small-001",
+    "base_version": 1,
+    "base_input_hash": "a3617294f5e8b22b329bc97c09ca294776a68bc5520c60808e4bb842b7518ee8",
+    "created_at": "2026-10-11T02:04:20.353855Z",
+    "demo_mode": false,
+    "provider": "openai_compatible",
+    "model": "deepseek-flash",
+    "raw_text": "那批货还是老规矩",
+    "items": [],
+    "preferences": [],
+    "missing": [],
+    "questions": [
+      {
+        "question": "“那批货”具体指哪些订单？请列出订单号（如 o1、o2 等）。",
+        "source_text": "那批货还是老规矩"
+      },
+      {
+        "question": "“老规矩”具体指什么约束？是固定车辆指派、订单先后顺序，还是其他规则？请明确说明。",
+        "source_text": "那批货还是老规矩"
+      }
+    ],
+    "rejected": [],
+    "status": "pending",
+    "warnings": []
+  }
+}

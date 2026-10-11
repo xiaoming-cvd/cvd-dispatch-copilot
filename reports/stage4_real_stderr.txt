@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "C:\Users\tianj\Desktop\城配调度副驾\src\llm\openai_provider.py", line 53, in complete
+    with self._opener(req, timeout=self._config.timeout_s) as resp:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 521, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 630, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 559, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "C:\Users\tianj\AppData\Local\Programs\Python\Python312\Lib\urllib\request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 400: Bad Request
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tianj\Desktop\城配调度副驾\scripts\draft_cli.py", line 107, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\tianj\Desktop\城配调度副驾\scripts\draft_cli.py", line 96, in main
+    draft = service.create_draft(scenario, args.text)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\Desktop\城配调度副驾\src\llm\service.py", line 143, in create_draft
+    reply = provider.complete(SYSTEM_PROMPT, _user_prompt(scenario, text.strip()))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tianj\Desktop\城配调度副驾\src\llm\openai_provider.py", line 56, in complete
+    raise LLMProviderError(
+src.llm.base.LLMProviderError: E_LLM_HTTP: 模型接口返回 HTTP 400（请检查密钥/模型名/额度）

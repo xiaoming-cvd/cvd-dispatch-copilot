@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "note": "自行生成的合成演示样本，非真实客户业务；时间单位为秒（相对 time_origin）",
+    "input_hash": "a3617294f5e8b22b329bc97c09ca294776a68bc5520c60808e4bb842b7518ee8",
+    "generated_by": "scripts/make_sample.py"
+  },
+  "scenario": {
+    "schema_version": "1.0",
+    "scenario_id": "sample-small-001",
+    "version": 1,
+    "time_origin": "2026-10-10T08:00:00+08:00",
+    "time_unit": "s",
+    "capacity_unit": "load_units",
+    "depot_node_id": "depot",
+    "orders": [
+      {
+        "order_id": "o1",
+        "node_id": "A",
+        "demand": 4.0,
+        "ready_s": 0,
+        "due_s": 10000,
+        "service_s": 120,
+        "is_new": false
+      },
+      {
+        "order_id": "o2",
+        "node_id": "B",
+        "demand": 3.0,
+        "ready_s": 0,
+        "due_s": 10000,
+        "service_s": 120,
+        "is_new": false
+      },
+      {
+        "order_id": "o3",
+        "node_id": "C",
+        "demand": 2.0,
+        "ready_s": 0,
+        "due_s": 10000,
+        "service_s": 120,
+        "is_new": false
+      },
+      {
+        "order_id": "o4",
+        "node_id": "E",
+        "demand": 1.0,
+        "ready_s": 0,
+        "due_s": 10000,
+        "service_s": 120,
+        "is_new": false
+      },
+      {
+        "order_id": "o5",
+        "node_id": "B",
+        "demand": 2.0,
+        "ready_s": 2000,
+        "due_s": 9000,
+        "service_s": 120,
+        "is_new": true
+      }
+    ],
+    "vehicles": [
+      {
+        "vehicle_id": "V1",
+        "capacity": 10.0,
+        "available_from_s": 0,
+        "return_by_s": 20000
+      },
+      {
+        "vehicle_id": "V2",
+        "capacity": 10.0,
+        "available_from_s": 0,
+        "return_by_s": 20000
+      }
+    ],
+    "travel_matrix": {
+      "node_ids": [
+        "depot",
+        "A",
+        "B",
+        "C",
+        "E"
+      ],
+      "time_s": [
+        [
+          0,
+          300,
+          600,
+          500,
+          700
+        ],
+        [
+          300,
+          0,
+          200,
+          350,
+          450
+        ],
+        [
+          610,
+          210,
+          0,
+          250,
+          300
+        ],
+        [
+          500,
+          350,
+          260,
+          0,
+          200
+        ],
+        [
+          700,
+          450,
+          300,
+          210,
+          0
+        ]
+      ]
+    },
+    "original_plan": {
+      "plan_id": "plan-demo-1",
+      "version": 1,
+      "routes": [
+        {
+          "vehicle_id": "V1",
+          "order_ids": [
+            "o1",
+            "o2"
+          ]
+        },
+        {
+          "vehicle_id": "V2",
+          "order_ids": [
+            "o3",
+            "o4"
+          ]
+        }
+      ]
+    },
+    "locks": {
+      "assignment_locks": {},
+      "relative_order_locks": []
+    },
+    "cost_config": {
+      "objective": "min_travel_time_s",
+      "coefficients": {
+        "travel_time": {
+          "value": 1.0,
+          "unit": "s",
+          "source": "model_travel_time"
+        }
+      }
+    }
+  }
+}

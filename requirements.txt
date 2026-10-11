@@ -1,0 +1,30 @@
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+click==8.5.0
+colorama==0.4.6
+fastapi==0.143.0
+h11==0.16.0
+httptools==0.9.0
+idna==3.20
+iniconfig==2.3.1
+opentelemetry-api==1.45.1
+packaging==26.3
+pluggy==1.6.0
+pydantic==2.14.0
+pydantic_core==2.50.0
+Pygments==2.21.0
+pytest==9.1.1
+python-dotenv==1.2.4
+PyYAML==6.0.3
+starlette==1.7.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.54.0
+watchfiles==1.3.0
+websockets==17.2
+ortools==9.14.6206
+# COPT 为可选后端：rebuild 方法需要，插单/低扰动/OR-Tools 不需要。
+# 安装方式见 COPT 官方（本机为全局安装 + coptpy 复制入 venv，属应急处理，
+# 不可移植，不作为通用安装方案）。
+# coptpy==8.0.6

@@ -1,0 +1,9 @@
+[project]
+name = "city-dispatch-copilot"
+version = "0.1.0"
+description = "城配调度副驾：出车前临时加单与低扰动重排（首版）"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"

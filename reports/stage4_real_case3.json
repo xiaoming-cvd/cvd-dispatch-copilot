@@ -1,0 +1,40 @@
+{
+  "status": "draft",
+  "draft": {
+    "draft_id": "draft-ddb243798f1ef797",
+    "scenario_id": "sample-small-001",
+    "base_version": 1,
+    "base_input_hash": "a3617294f5e8b22b329bc97c09ca294776a68bc5520c60808e4bb842b7518ee8",
+    "created_at": "2026-10-11T02:04:09.380674Z",
+    "demo_mode": false,
+    "provider": "openai_compatible",
+    "model": "deepseek-flash",
+    "raw_text": "V1 上 o1 和 o2 顺序不能变，尽量别换车",
+    "items": [
+      {
+        "kind": "rel_order_lock",
+        "order_ids": [
+          "o1",
+          "o2"
+        ],
+        "vehicle_id": "V1",
+        "source_text": "V1 上 o1 和 o2 顺序不能变",
+        "status": "pending"
+      }
+    ],
+    "preferences": [
+      {
+        "kind": "avoid_vehicle_change",
+        "order_ids": [],
+        "source_text": "尽量别换车",
+        "status": "pending",
+        "note": ""
+      }
+    ],
+    "missing": [],
+    "questions": [],
+    "rejected": [],
+    "status": "pending",
+    "warnings": []
+  }
+}

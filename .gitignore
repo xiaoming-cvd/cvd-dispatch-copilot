@@ -1,0 +1,35 @@
+# 虚拟环境与 Python 缓存
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 原始数据（只读，默认不提交）
+data/raw/
+
+# 环境变量与密钥
+.env
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+
+# 求解器许可与机器本地配置（绝不入库）
+*.lic
+*.license
+license.dat
+copt*/
+
+# 运行期状态（草案存储、任务队列、演示产物）
+data/processed/drafts/
+data/processed/jobs/
+data/processed/exports/
+
+# 打包与临时产物
+*.tmp

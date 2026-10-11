@@ -1,0 +1,173 @@
+{
+  "input_hash": "a3617294f5e8b22b329bc97c09ca294776a68bc5520c60808e4bb842b7518ee8",
+  "config": {
+    "method": "rebuild",
+    "time_limit_ms": 10000
+  },
+  "solver_version": "stage2-ortools-9.14.6206",
+  "elapsed_ms": 31,
+  "status": "feasible",
+  "routes": [
+    {
+      "vehicle_id": "V1",
+      "order_ids": [
+        "o1"
+      ],
+      "return_s": 720
+    },
+    {
+      "vehicle_id": "V2",
+      "order_ids": [
+        "o5",
+        "o4",
+        "o3",
+        "o2"
+      ],
+      "return_s": 3860
+    }
+  ],
+  "schedule": [
+    {
+      "vehicle_id": "V1",
+      "order_id": "o1",
+      "seq": 1,
+      "arrive_s": 300,
+      "wait_s": 0,
+      "start_s": 300,
+      "depart_s": 420
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o5",
+      "seq": 1,
+      "arrive_s": 600,
+      "wait_s": 1400,
+      "start_s": 2000,
+      "depart_s": 2120
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o4",
+      "seq": 2,
+      "arrive_s": 2420,
+      "wait_s": 0,
+      "start_s": 2420,
+      "depart_s": 2540
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o3",
+      "seq": 3,
+      "arrive_s": 2750,
+      "wait_s": 0,
+      "start_s": 2750,
+      "depart_s": 2870
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o2",
+      "seq": 4,
+      "arrive_s": 3130,
+      "wait_s": 0,
+      "start_s": 3130,
+      "depart_s": 3250
+    }
+  ],
+  "metrics": {
+    "total_travel_time_s": 2580,
+    "total_wait_s": 1400,
+    "vehicles_used": 2,
+    "orders_served": 5,
+    "orders_total": 5,
+    "max_return_s": 3860,
+    "ortools_status": "ROUTING_OPTIMAL"
+  },
+  "diff": {},
+  "validation": {
+    "independent_ok": true,
+    "route_count": 2,
+    "issues": [],
+    "routes": [
+      {
+        "vehicle_id": "V1",
+        "order_ids": [
+          "o1"
+        ],
+        "return_s": 720,
+        "total_load": 4.0,
+        "travel_time_s": 600,
+        "ok": true,
+        "issues": [],
+        "stops": [
+          {
+            "vehicle_id": "V1",
+            "order_id": "o1",
+            "seq": 1,
+            "arrive_s": 300,
+            "wait_s": 0,
+            "start_s": 300,
+            "depart_s": 420
+          }
+        ]
+      },
+      {
+        "vehicle_id": "V2",
+        "order_ids": [
+          "o5",
+          "o4",
+          "o3",
+          "o2"
+        ],
+        "return_s": 3860,
+        "total_load": 8.0,
+        "travel_time_s": 1980,
+        "ok": true,
+        "issues": [],
+        "stops": [
+          {
+            "vehicle_id": "V2",
+            "order_id": "o5",
+            "seq": 1,
+            "arrive_s": 600,
+            "wait_s": 1400,
+            "start_s": 2000,
+            "depart_s": 2120
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o4",
+            "seq": 2,
+            "arrive_s": 2420,
+            "wait_s": 0,
+            "start_s": 2420,
+            "depart_s": 2540
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o3",
+            "seq": 3,
+            "arrive_s": 2750,
+            "wait_s": 0,
+            "start_s": 2750,
+            "depart_s": 2870
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o2",
+            "seq": 4,
+            "arrive_s": 3130,
+            "wait_s": 0,
+            "start_s": 3130,
+            "depart_s": 3250
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": [],
+  "assumptions": [
+    "车辆从仓库固定时刻 available_from_s 出发，服务开始=max(到达,ready_s)，等待=服务开始-到达；返回不得晚于 return_by_s",
+    "容量为配送语义：单路线装载=路线全部订单 demand 之和",
+    "可行性由独立校验器依据输入矩阵重算复核，不采信求解器标志"
+  ]
+}

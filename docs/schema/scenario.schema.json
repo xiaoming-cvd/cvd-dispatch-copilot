@@ -1,0 +1,350 @@
+{
+  "$defs": {
+    "CostCoefficient": {
+      "description": "成本系数必须带单位与来源；没有真实单价时以行驶秒数为优化指标。",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "unit": {
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "source"
+      ],
+      "title": "CostCoefficient",
+      "type": "object"
+    },
+    "CostConfig": {
+      "properties": {
+        "objective": {
+          "const": "min_travel_time_s",
+          "default": "min_travel_time_s",
+          "title": "Objective",
+          "type": "string"
+        },
+        "coefficients": {
+          "additionalProperties": {
+            "$ref": "#/$defs/CostCoefficient"
+          },
+          "title": "Coefficients",
+          "type": "object"
+        }
+      },
+      "title": "CostConfig",
+      "type": "object"
+    },
+    "Locks": {
+      "description": "锁定条件。\n\nassignment_locks: 固定某旧任务所属车辆。\nrelative_order_locks: 固定某车上若干旧任务的相对顺序；\n    允许在它们之间插入新任务。\n首版不实现\"整条路线锁死\"。",
+      "properties": {
+        "assignment_locks": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Assignment Locks",
+          "type": "object"
+        },
+        "relative_order_locks": {
+          "items": {
+            "$ref": "#/$defs/RelativeOrderLock"
+          },
+          "title": "Relative Order Locks",
+          "type": "array"
+        }
+      },
+      "title": "Locks",
+      "type": "object"
+    },
+    "Order": {
+      "description": "一个不可拆分的服务单元：只能分配给一辆车并服务一次。",
+      "properties": {
+        "order_id": {
+          "minLength": 1,
+          "title": "Order Id",
+          "type": "string"
+        },
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "demand": {
+          "minimum": 0,
+          "title": "Demand",
+          "type": "number"
+        },
+        "ready_s": {
+          "minimum": 0,
+          "title": "Ready S",
+          "type": "integer"
+        },
+        "due_s": {
+          "minimum": 0,
+          "title": "Due S",
+          "type": "integer"
+        },
+        "service_s": {
+          "minimum": 0,
+          "title": "Service S",
+          "type": "integer"
+        },
+        "is_new": {
+          "default": false,
+          "title": "Is New",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order_id",
+        "node_id",
+        "demand",
+        "ready_s",
+        "due_s",
+        "service_s"
+      ],
+      "title": "Order",
+      "type": "object"
+    },
+    "OriginalPlan": {
+      "description": "冻结的基准计划。原任务全部恰好出现一次，新任务不得出现。",
+      "properties": {
+        "plan_id": {
+          "minLength": 1,
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "routes": {
+          "items": {
+            "$ref": "#/$defs/RoutePlan"
+          },
+          "minItems": 1,
+          "title": "Routes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "plan_id",
+        "version",
+        "routes"
+      ],
+      "title": "OriginalPlan",
+      "type": "object"
+    },
+    "RelativeOrderLock": {
+      "description": "某车上若干旧任务的相对顺序锁：保持给定先后顺序，同时固定其车辆。",
+      "properties": {
+        "vehicle_id": {
+          "minLength": 1,
+          "title": "Vehicle Id",
+          "type": "string"
+        },
+        "order_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Order Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "order_ids"
+      ],
+      "title": "RelativeOrderLock",
+      "type": "object"
+    },
+    "RoutePlan": {
+      "description": "原计划中的一条路线：一辆车 + 有序订单列表。",
+      "properties": {
+        "vehicle_id": {
+          "minLength": 1,
+          "title": "Vehicle Id",
+          "type": "string"
+        },
+        "order_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Order Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "order_ids"
+      ],
+      "title": "RoutePlan",
+      "type": "object"
+    },
+    "TravelMatrix": {
+      "description": "节点间行驶时间矩阵。允许非对称；首版拒绝不完整矩阵。\n\n数据规则（总工程师审查修正）：\n- 零值 = 合法的非负行驶时间（不同节点同址、或按声明规则取整后为 0），\n  不得仅凭 0 判作缺边；\n- 缺边 = 字段缺失 / null（明确的不可达标记），首版直接拒绝\n  （E_MATRIX_EDGE_MISSING），不允许用 null 以外的隐式表达。",
+      "properties": {
+        "node_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Node Ids",
+          "type": "array"
+        },
+        "time_s": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "title": "Time S",
+          "type": "array"
+        }
+      },
+      "required": [
+        "node_ids",
+        "time_s"
+      ],
+      "title": "TravelMatrix",
+      "type": "object"
+    },
+    "Vehicle": {
+      "description": "车辆：起终点均为同一仓库；未启用时不产生启用费（首版所有车均启用）。",
+      "properties": {
+        "vehicle_id": {
+          "minLength": 1,
+          "title": "Vehicle Id",
+          "type": "string"
+        },
+        "capacity": {
+          "exclusiveMinimum": 0,
+          "title": "Capacity",
+          "type": "number"
+        },
+        "available_from_s": {
+          "minimum": 0,
+          "title": "Available From S",
+          "type": "integer"
+        },
+        "return_by_s": {
+          "minimum": 0,
+          "title": "Return By S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "capacity",
+        "available_from_s",
+        "return_by_s"
+      ],
+      "title": "Vehicle",
+      "type": "object"
+    }
+  },
+  "description": "一个完整调度场景。校验通过后对象冻结，版本号不可变。",
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scenario_id": {
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "time_origin": {
+      "format": "date-time",
+      "title": "Time Origin",
+      "type": "string"
+    },
+    "time_unit": {
+      "const": "s",
+      "default": "s",
+      "title": "Time Unit",
+      "type": "string"
+    },
+    "capacity_unit": {
+      "enum": [
+        "load_units",
+        "cm3"
+      ],
+      "title": "Capacity Unit",
+      "type": "string"
+    },
+    "depot_node_id": {
+      "minLength": 1,
+      "title": "Depot Node Id",
+      "type": "string"
+    },
+    "orders": {
+      "items": {
+        "$ref": "#/$defs/Order"
+      },
+      "minItems": 1,
+      "title": "Orders",
+      "type": "array"
+    },
+    "vehicles": {
+      "items": {
+        "$ref": "#/$defs/Vehicle"
+      },
+      "minItems": 1,
+      "title": "Vehicles",
+      "type": "array"
+    },
+    "travel_matrix": {
+      "$ref": "#/$defs/TravelMatrix"
+    },
+    "original_plan": {
+      "$ref": "#/$defs/OriginalPlan"
+    },
+    "locks": {
+      "$ref": "#/$defs/Locks"
+    },
+    "cost_config": {
+      "$ref": "#/$defs/CostConfig"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "version",
+    "time_origin",
+    "capacity_unit",
+    "depot_node_id",
+    "orders",
+    "vehicles",
+    "travel_matrix",
+    "original_plan"
+  ],
+  "title": "Scenario",
+  "type": "object"
+}

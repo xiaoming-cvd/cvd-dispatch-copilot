@@ -1,0 +1,591 @@
+{
+ "split_seed": 20261010,
+ "dev_fraction": 0.5,
+ "scenarios": [
+  {
+   "scenario_id": "c101-s101",
+   "base_instance": "C101",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/c101-s101.json",
+   "draft_input_hash": "fa00731e290d30adf1d2cc61cac5967efec73d0788bfbb36ea53c09775197113"
+  },
+  {
+   "scenario_id": "c101-s102",
+   "base_instance": "C101",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/c101-s102.json",
+   "draft_input_hash": "b709f2a057da58e8fc3cf547ee7c13ffed1a63ba28396197a0fd8531aad8ba23"
+  },
+  {
+   "scenario_id": "c102-s101",
+   "base_instance": "C102",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/c102-s101.json",
+   "draft_input_hash": "6e9ece9d8bb81c0491970986cc1c5c3b6b69c719c9c7fbc626f9307b03dd415d"
+  },
+  {
+   "scenario_id": "c102-s102",
+   "base_instance": "C102",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/c102-s102.json",
+   "draft_input_hash": "33769831e03528bd3f94879e2f79f6f8b72a5f1cba512cfc19394eccd72b4b5e"
+  },
+  {
+   "scenario_id": "c201-s201",
+   "base_instance": "C201",
+   "split": "test",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/c201-s201.json",
+   "draft_input_hash": "9f718ed108a3ba33f0c183ef011310d041c82a6a9acd4027298756974fee3e5b"
+  },
+  {
+   "scenario_id": "c202-s201",
+   "base_instance": "C202",
+   "split": "test",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/c202-s201.json",
+   "draft_input_hash": "abc21f1e92f810d24fdc881f566b5b8c9d74fb7ec94f6c5f34796321c19e6ea8"
+  },
+  {
+   "scenario_id": "r101-s101",
+   "base_instance": "R101",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/r101-s101.json",
+   "draft_input_hash": "0fe4389ed6f511c9b91ae634674b6e844e75c1f93b30401ef575e4b01af3680d"
+  },
+  {
+   "scenario_id": "r101-s102",
+   "base_instance": "R101",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/r101-s102.json",
+   "draft_input_hash": "c9b948e461e1fc6cf35b07e1ae770156cc7cdeb1103847c5f5330deea7b3cbf8"
+  },
+  {
+   "scenario_id": "r102-s101",
+   "base_instance": "R102",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/r102-s101.json",
+   "draft_input_hash": "087874a960cd9459ca71c4dd0558da09fdd52464350aaf35e495023b82092f3d"
+  },
+  {
+   "scenario_id": "r102-s102",
+   "base_instance": "R102",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/r102-s102.json",
+   "draft_input_hash": "b07ec0f76dfb0dce3ea504679e80a25010c14a810c6b74d75722a6bfdd03b397"
+  },
+  {
+   "scenario_id": "r201-s101",
+   "base_instance": "R201",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/r201-s101.json",
+   "draft_input_hash": "906875623a461be6e270b5416ed915377d83bdc628b3b5b7639203fc43ccb64a"
+  },
+  {
+   "scenario_id": "r201-s102",
+   "base_instance": "R201",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/r201-s102.json",
+   "draft_input_hash": "576f69cefbc811882a084a0d175b6deb24264503cb52f6ffe09a5148eb5edde2"
+  },
+  {
+   "scenario_id": "r202-s101",
+   "base_instance": "R202",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/dev/r202-s101.json",
+   "draft_input_hash": "6388e18243b6e00f09b18fde57a3e66897cd3092def8ea3abb76573bd0f20e7b"
+  },
+  {
+   "scenario_id": "r202-s102",
+   "base_instance": "R202",
+   "split": "dev",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "tight",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/dev/r202-s102.json",
+   "draft_input_hash": "6cb66d7e27142eae9812f442b0f1f02c0ef31277b65d209db0f022aa1bd15cae"
+  },
+  {
+   "scenario_id": "rc101-s201",
+   "base_instance": "RC101",
+   "split": "test",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/rc101-s201.json",
+   "draft_input_hash": "121c369809d2d6a26117a61f6a99011091188fdec57a9216957581dd594b3bf6"
+  },
+  {
+   "scenario_id": "rc201-s201",
+   "base_instance": "RC201",
+   "split": "test",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/rc201-s201.json",
+   "draft_input_hash": "d3134870b2623016189e9570fd6c27d0ca5dbd2b4aa7facf65b8245d2737f16c"
+  },
+  {
+   "scenario_id": "rc202-s201",
+   "base_instance": "RC202",
+   "split": "test",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "normal",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/rc202-s201.json",
+   "draft_input_hash": "dc1c2f68d1b432ab4eefd68746baf87f9af9b3dbf2f38a407f4015f012b39e58"
+  },
+  {
+   "scenario_id": "kilby-tai385-s201",
+   "base_instance": "kilby-tai385",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 179,
+    "n_new": 206,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai385-s201.json",
+   "draft_input_hash": "9679ade1ee0abfbb293fdd07a4a882bc4c99daa4296a35bd6d2987361d645bfb"
+  },
+  {
+   "scenario_id": "kilby-c100-s101",
+   "base_instance": "kilby-c100",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 59,
+    "n_new": 41,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-c100-s101.json",
+   "draft_input_hash": "2adafa912a3c4e7640374e3baac5e51c6b5212945bb7c5fc65bc3d0f42a45443"
+  },
+  {
+   "scenario_id": "kilby-c100b-s101",
+   "base_instance": "kilby-c100b",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 59,
+    "n_new": 41,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-c100b-s101.json",
+   "draft_input_hash": "d82da97c1b34ecec3cff85e11560f14b63d60589b39cc487fcdf0bbe55333ede"
+  },
+  {
+   "scenario_id": "kilby-c120-s101",
+   "base_instance": "kilby-c120",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 50,
+    "n_new": 70,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-c120-s101.json",
+   "draft_input_hash": "5e3f5b326cb0013358c2727f785719bf298a965a4695446652f0f7d087d38413"
+  },
+  {
+   "scenario_id": "kilby-c150-s101",
+   "base_instance": "kilby-c150",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 70,
+    "n_new": 80,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-c150-s101.json",
+   "draft_input_hash": "ae78b58f6a90e7c8e2d6b5a371b983ed71a539368b20ec5595135399f109eb03"
+  },
+  {
+   "scenario_id": "kilby-c199-s201",
+   "base_instance": "kilby-c199",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 94,
+    "n_new": 105,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-c199-s201.json",
+   "draft_input_hash": "b21ecfde183cdd7b29f3a51141b0a7e182219dba0103e95d12fba707473ac776"
+  },
+  {
+   "scenario_id": "kilby-c50-s201",
+   "base_instance": "kilby-c50",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 23,
+    "n_new": 27,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-c50-s201.json",
+   "draft_input_hash": "6493762460fdce5365b7bfd4942e8270e529116d8d03f4b4db86786276ab3f43"
+  },
+  {
+   "scenario_id": "kilby-c75-s201",
+   "base_instance": "kilby-c75",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 39,
+    "n_new": 36,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-c75-s201.json",
+   "draft_input_hash": "461e4b9c1e525ba4c7752972ed5a9c178510cc61a765eb31bd81955cb93b1ab6"
+  },
+  {
+   "scenario_id": "kilby-f134-s101",
+   "base_instance": "kilby-f134",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 77,
+    "n_new": 57,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-f134-s101.json",
+   "draft_input_hash": "8eae0fa84ecb84888c40000e4ed3d8b16ff14a206f45eb8a90f95bfc9b946b53"
+  },
+  {
+   "scenario_id": "kilby-f71-s201",
+   "base_instance": "kilby-f71",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 42,
+    "n_new": 29,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-f71-s201.json",
+   "draft_input_hash": "09837489271b1d81dd3051a68fd4f3f313d953380bb5890ae50914a816c9171d"
+  },
+  {
+   "scenario_id": "kilby-tai100a-s101",
+   "base_instance": "kilby-tai100a",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 56,
+    "n_new": 44,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai100a-s101.json",
+   "draft_input_hash": "efcdf3cfe2f0014ee34fba4a219d96085e6e1ca2f68f4949787c5a1b513f6756"
+  },
+  {
+   "scenario_id": "kilby-tai100b-s201",
+   "base_instance": "kilby-tai100b",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 56,
+    "n_new": 44,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai100b-s201.json",
+   "draft_input_hash": "55080eb9fa1dd3a9e302de3b63fc23a7cdb7dc1bd91c72db897fab04953ca5ae"
+  },
+  {
+   "scenario_id": "kilby-tai100c-s101",
+   "base_instance": "kilby-tai100c",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 46,
+    "n_new": 54,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai100c-s101.json",
+   "draft_input_hash": "cb983a76d86a40d8e7a8a9acce522525c3566d521c9dd9c252a9aab4b75a55ab"
+  },
+  {
+   "scenario_id": "kilby-tai100d-s101",
+   "base_instance": "kilby-tai100d",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 49,
+    "n_new": 51,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai100d-s101.json",
+   "draft_input_hash": "49964075ef5bd81b22fc29faddf54f13cb3c2c96b54cc90aa85c1dbc88ea7882"
+  },
+  {
+   "scenario_id": "kilby-tai150a-s201",
+   "base_instance": "kilby-tai150a",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 69,
+    "n_new": 81,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai150a-s201.json",
+   "draft_input_hash": "4bfdfdcb2fc3d56e70ff3ce600bdbff6ac6d95316f64cc8760c1558ab788193f"
+  },
+  {
+   "scenario_id": "kilby-tai150b-s101",
+   "base_instance": "kilby-tai150b",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 73,
+    "n_new": 77,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai150b-s101.json",
+   "draft_input_hash": "25c7c96ac9913d02add6c4a02fd613dba589b1c7ae1b5c8c63ef52e5689250c4"
+  },
+  {
+   "scenario_id": "kilby-tai150c-s201",
+   "base_instance": "kilby-tai150c",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 73,
+    "n_new": 77,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai150c-s201.json",
+   "draft_input_hash": "0ffed02c3ebcc64fdc993bf138b916cba4022a5e1364d0d1dd32248c2347b732"
+  },
+  {
+   "scenario_id": "kilby-tai150d-s101",
+   "base_instance": "kilby-tai150d",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 84,
+    "n_new": 66,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai150d-s101.json",
+   "draft_input_hash": "3fa13177e6de7ee52d14709376cfad24b401abe8df0adf4cadf409217953f2a1"
+  },
+  {
+   "scenario_id": "kilby-tai75a-s201",
+   "base_instance": "kilby-tai75a",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 42,
+    "n_new": 33,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai75a-s201.json",
+   "draft_input_hash": "2a5fe7692e5b4c67a7d962b9353d2ab4fbc5bdd8032749f740f7e0c72220bd4a"
+  },
+  {
+   "scenario_id": "kilby-tai75b-s101",
+   "base_instance": "kilby-tai75b",
+   "split": "dev",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 42,
+    "n_new": 33,
+    "lock_ratio": 0.3,
+    "seed": 101
+   },
+   "file": "scenarios/dev/kilby-tai75b-s101.json",
+   "draft_input_hash": "e1682d096aa7a75767581ee4677944e436e0720e83735a36857a978075102b77"
+  },
+  {
+   "scenario_id": "kilby-tai75c-s201",
+   "base_instance": "kilby-tai75c",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 42,
+    "n_new": 33,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai75c-s201.json",
+   "draft_input_hash": "9c900cbd8722f4491d2ab8f53b54262aec681a17bb15eb40d61aa51c8cb3ff48"
+  },
+  {
+   "scenario_id": "kilby-tai75d-s201",
+   "base_instance": "kilby-tai75d",
+   "split": "test",
+   "config": {
+    "source": "kilby",
+    "cutoff": 0.5,
+    "n_known": 28,
+    "n_new": 47,
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/test/kilby-tai75d-s201.json",
+   "draft_input_hash": "85692f456a011c5fc5f6b18e53d138c5fe69b7d2724655001e2edd451fe28448"
+  }
+ ]
+}

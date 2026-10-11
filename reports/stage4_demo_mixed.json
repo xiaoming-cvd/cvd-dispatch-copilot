@@ -1,0 +1,41 @@
+{
+  "status": "draft",
+  "draft": {
+    "draft_id": "draft-9f6067f3fbc74e97",
+    "scenario_id": "sample-small-001",
+    "base_version": 1,
+    "base_input_hash": "a3617294f5e8b22b329bc97c09ca294776a68bc5520c60808e4bb842b7518ee8",
+    "created_at": "2026-10-11T02:01:35.184928Z",
+    "demo_mode": true,
+    "provider": "mock",
+    "model": null,
+    "raw_text": "o1 尽量不换车，把 o5 提前，那批货还是老规矩",
+    "items": [],
+    "preferences": [
+      {
+        "kind": "avoid_vehicle_change",
+        "order_ids": [
+          "o1"
+        ],
+        "source_text": "o1 尽量不换车",
+        "status": "pending",
+        "note": "尽量不换车（软约束，不写成锁）"
+      }
+    ],
+    "missing": [
+      {
+        "description": "时间/窗口类调整缺少明确目标值（需要具体到秒或明确时间点），未生成约束",
+        "source_text": "把 o5 提前"
+      }
+    ],
+    "questions": [
+      {
+        "question": "指代不清，请明确到订单号/车辆号后再确认",
+        "source_text": "那批货还是老规矩"
+      }
+    ],
+    "rejected": [],
+    "status": "pending",
+    "warnings": []
+  }
+}

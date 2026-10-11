@@ -1,0 +1,116 @@
+== 环境 ==
+Python 3.12.7
+ortools: 9.14.6206
+coptpy: 8.0.6 (coptpy from system site-packages, copied)
+
+== 测试结果 ==
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\tianj\Desktop\城配调度副驾
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 88 items
+
+tests/test_amazon_and_integrity.py::TestAmazonParse::test_volume_aggregation PASSED [  1%]
+tests/test_amazon_and_integrity.py::TestAmazonParse::test_missing_window_declared_not_zero_deadline PASSED [  2%]
+tests/test_amazon_and_integrity.py::TestAmazonParse::test_directed_travel_matrix_keys PASSED [  3%]
+tests/test_amazon_and_integrity.py::TestAmazonParse::test_composite_keys PASSED [  4%]
+tests/test_amazon_and_integrity.py::TestAmazonParse::test_sample_marked_synthetic PASSED [  5%]
+tests/test_amazon_and_integrity.py::TestRawIntegrity::test_raw_files_match_manifest PASSED [  6%]
+tests/test_amazon_and_integrity.py::TestRawIntegrity::test_manifest_traceability_fields PASSED [  7%]
+tests/test_checks.py::TestValidBaseline::test_minimal_valid_scenario PASSED [  9%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_duplicate_order_id PASSED [ 10%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_duplicate_vehicle_id PASSED [ 11%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_order_node_not_in_matrix PASSED [ 12%]
+tests/test_checks.py::TestDuplicatesAndReferences::test_depot_not_in_matrix PASSED [ 13%]
+tests/test_checks.py::TestPlanConsistency::test_missing_old_order_is_rejected PASSED [ 14%]
+tests/test_checks.py::TestPlanConsistency::test_duplicate_plan_order PASSED [ 15%]
+tests/test_checks.py::TestPlanConsistency::test_new_order_in_plan_rejected PASSED [ 17%]
+tests/test_checks.py::TestPlanConsistency::test_unknown_order_in_plan PASSED [ 18%]
+tests/test_checks.py::TestPlanConsistency::test_unknown_vehicle_in_plan PASSED [ 19%]
+tests/test_checks.py::TestLocks::test_lock_on_new_order_rejected PASSED  [ 20%]
+tests/test_checks.py::TestLocks::test_lock_unknown_vehicle PASSED        [ 21%]
+tests/test_checks.py::TestLocks::test_assignment_vs_relative_conflict PASSED [ 22%]
+tests/test_checks.py::TestLocks::test_consistent_locks_pass PASSED       [ 23%]
+tests/test_generator.py::TestReproducibility::test_same_seed_identical PASSED [ 25%]
+tests/test_generator.py::TestReproducibility::test_different_seed_differs PASSED [ 26%]
+tests/test_generator.py::TestReproducibility::test_event_log_tracks_selection PASSED [ 27%]
+tests/test_generator.py::TestDraftValidity::test_draft_passes_validation PASSED [ 28%]
+tests/test_generator.py::TestDraftValidity::test_new_orders_flagged PASSED [ 29%]
+tests/test_generator.py::TestDraftValidity::test_tight_windows_shrink PASSED [ 30%]
+tests/test_generator.py::TestDraftValidity::test_time_conversion PASSED  [ 31%]
+tests/test_generator.py::TestSplit::test_split_deterministic PASSED      [ 32%]
+tests/test_generator.py::TestSplit::test_split_covers_all PASSED         [ 34%]
+tests/test_generator.py::TestSplit::test_no_cross_contamination PASSED   [ 35%]
+tests/test_models.py::TestOrder::test_window_inversion_rejected PASSED   [ 36%]
+tests/test_models.py::TestOrder::test_equal_window_allowed PASSED        [ 37%]
+tests/test_models.py::TestOrder::test_negative_demand_rejected PASSED    [ 38%]
+tests/test_models.py::TestOrder::test_negative_service_rejected PASSED   [ 39%]
+tests/test_models.py::TestOrder::test_missing_weight_not_zero PASSED     [ 40%]
+tests/test_models.py::TestOrder::test_frozen PASSED                      [ 42%]
+tests/test_models.py::TestVehicle::test_return_before_depart_rejected PASSED [ 43%]
+tests/test_models.py::TestVehicle::test_zero_capacity_rejected PASSED    [ 44%]
+tests/test_models.py::TestTravelMatrix::test_valid_matrix PASSED         [ 45%]
+tests/test_models.py::TestTravelMatrix::test_asymmetric_allowed PASSED   [ 46%]
+tests/test_models.py::TestTravelMatrix::test_row_count_mismatch PASSED   [ 47%]
+tests/test_models.py::TestTravelMatrix::test_row_length_mismatch PASSED  [ 48%]
+tests/test_models.py::TestTravelMatrix::test_negative_travel_rejected PASSED [ 50%]
+tests/test_models.py::TestTravelMatrix::test_nonzero_diagonal_rejected PASSED [ 51%]
+tests/test_models.py::TestTravelMatrix::test_zero_off_diagonal_rejected_as_missing_edge PASSED [ 52%]
+tests/test_models.py::TestTravelMatrix::test_duplicate_node_rejected PASSED [ 53%]
+tests/test_models.py::TestScenarioUnits::test_time_unit_conflict_rejected PASSED [ 54%]
+tests/test_models.py::TestScenarioUnits::test_time_origin_without_tz_rejected PASSED [ 55%]
+tests/test_models.py::TestLocksModel::test_relative_order_lock_min_two PASSED [ 56%]
+tests/test_models.py::TestLocksModel::test_locks_default_empty PASSED    [ 57%]
+tests/test_models.py::TestHash::test_hash_stable_and_sensitive PASSED    [ 59%]
+tests/test_sample.py::TestSample::test_sample_passes_validation PASSED   [ 60%]
+tests/test_sample.py::TestSample::test_sample_hand_computed_schedule PASSED [ 61%]
+tests/test_sample.py::TestSample::test_committed_sample_file_matches PASSED [ 62%]
+tests/test_sample.py::TestSample::test_schema_exported PASSED            [ 63%]
+tests/test_solomon.py::TestParse::test_c101_known_values PASSED          [ 64%]
+tests/test_solomon.py::TestParse::test_all_files_parse PASSED            [ 65%]
+tests/test_solomon.py::TestParse::test_original_units_preserved PASSED   [ 67%]
+tests/test_solomon.py::TestMatrix::test_matrix_complete_square PASSED    [ 68%]
+tests/test_solomon.py::TestMatrix::test_scaling_and_rounding PASSED      [ 69%]
+tests/test_solver_stage2.py::TestOriginalPlanGeneration::test_plan_covers_only_old_orders PASSED [ 70%]
+tests/test_solver_stage2.py::TestOriginalPlanGeneration::test_materialize_locks_ratio_and_seed_reproducible PASSED [ 71%]
+tests/test_solver_stage2.py::TestOriginalPlanGeneration::test_materialize_scenario_valid PASSED [ 72%]
+tests/test_solver_stage2.py::TestInsertionBaseline::test_inserts_new_order_without_moving_old PASSED [ 73%]
+tests/test_solver_stage2.py::TestInsertionBaseline::test_insert_infeasible_returns_empty_not_proof PASSED [ 75%]
+tests/test_solver_stage2.py::TestRebuildBaseline::test_rebuild_feasible_on_sample PASSED [ 76%]
+tests/test_solver_stage2.py::TestRebuildBaseline::test_proven_infeasible_when_capacity_insufficient PASSED [ 77%]
+tests/test_solver_stage2.py::TestRebuildBaseline::test_locks_can_make_rebuild_infeasible PASSED [ 78%]
+tests/test_solver_stage2.py::TestStatusSemantics::test_invalid_input PASSED [ 79%]
+tests/test_solver_stage2.py::TestStatusSemantics::test_short_budget_is_not_infeasible PASSED [ 80%]
+tests/test_solver_stage2.py::TestStatusSemantics::test_insert_no_position_is_not_infeasible PASSED [ 81%]
+tests/test_solver_stage2.py::TestStatusSemantics::test_full_dev_draft_materializes_and_solves PASSED [ 82%]
+tests/test_solver_stage2.py::TestOrtoolsRawMapping::test_status_names_are_routing_enums PASSED [ 84%]
+tests/test_timetable.py::TestHandComputedSchedule::test_sample_v1_route_matches_hand_calculation PASSED [ 85%]
+tests/test_timetable.py::TestHandComputedSchedule::test_waiting_computed_correctly PASSED [ 86%]
+tests/test_timetable.py::TestHandComputedSchedule::test_fixed_departure_respected PASSED [ 87%]
+tests/test_timetable.py::TestViolationDetection::test_time_window_violation PASSED [ 88%]
+tests/test_timetable.py::TestViolationDetection::test_capacity_violation PASSED [ 89%]
+tests/test_timetable.py::TestViolationDetection::test_return_late PASSED [ 90%]
+tests/test_timetable.py::TestViolationDetection::test_unknown_order_and_vehicle PASSED [ 92%]
+tests/test_timetable.py::TestSolutionLevel::test_missing_order_rejected PASSED [ 93%]
+tests/test_timetable.py::TestSolutionLevel::test_duplicate_order_rejected PASSED [ 94%]
+tests/test_timetable.py::TestSolutionLevel::test_full_coverage_ok PASSED [ 95%]
+tests/test_timetable.py::TestSolutionLevel::test_assignment_lock_violation PASSED [ 96%]
+tests/test_timetable.py::TestSolutionLevel::test_assignment_lock_respected PASSED [ 97%]
+tests/test_timetable.py::TestSolutionLevel::test_relative_order_lock PASSED [ 98%]
+tests/test_timetable.py::TestRedLines::test_validator_ignores_solver_claims PASSED [100%]
+
+============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 88 passed, 3 warnings in 0.88s ========================

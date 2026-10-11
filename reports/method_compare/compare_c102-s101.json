@@ -1,0 +1,56 @@
+{
+  "scenario_id": "c102-s101",
+  "input_hash": "63998c211883028147ae7d06ed9549faa702b022b6be2ca66e9c32600a33c5b2",
+  "time_limit_ms": 60000,
+  "cost_cap_ratio": 1.1,
+  "methods": [
+    {
+      "method": "insert",
+      "status": "feasible",
+      "input_hash": "63998c211883028147ae7d06ed9549faa702b022b6be2ca66e9c32600a33c5b2",
+      "solver_version": "stage2-insert-enum/1.0",
+      "termination": null,
+      "total_travel_time_s": 46106,
+      "elapsed_ms": 15,
+      "elapsed_solve_ms": null,
+      "validation_ok": true,
+      "warnings": []
+    },
+    {
+      "method": "rebuild",
+      "status": "feasible",
+      "input_hash": "63998c211883028147ae7d06ed9549faa702b022b6be2ca66e9c32600a33c5b2",
+      "solver_version": "stage2-copt-8.0.6",
+      "termination": "MIP_OPTIMAL",
+      "total_travel_time_s": 30819,
+      "elapsed_ms": 41032,
+      "elapsed_solve_ms": 40937,
+      "validation_ok": true,
+      "warnings": []
+    },
+    {
+      "method": "low_disruption",
+      "status": "feasible",
+      "input_hash": "63998c211883028147ae7d06ed9549faa702b022b6be2ca66e9c32600a33c5b2",
+      "solver_version": "stage3-low-disruption/1.0",
+      "termination": "no_candidate_within_cost_cap",
+      "total_travel_time_s": 38196,
+      "elapsed_ms": 889,
+      "elapsed_solve_ms": null,
+      "validation_ok": true,
+      "warnings": [
+        "低扰动候选池内无成本 ≤ 1.10 × reference_best_cost(30819s) = 33900.9s 的方案；推荐池内最低成本候选并如实标注 within_reference_cap=false，不冒充达标"
+      ],
+      "vehicle_changes": 2,
+      "adjacency_breaks": 5,
+      "pool_best_cost_s": 38196,
+      "reference_best_cost_s": 30819,
+      "reference_source": "reference_results",
+      "cost_cap_ratio": 1.1,
+      "cost_cap_s": 33900.9,
+      "within_reference_cap": false,
+      "candidate_count": 512,
+      "search_stop_reason": "archive_full"
+    }
+  ]
+}

@@ -1,0 +1,476 @@
+{
+  "input_hash": "1a608faff4bd795f2532e299a4190bbcd9ff28abbe75161b0134edf8107ba668",
+  "config": {
+    "method": "insert",
+    "time_limit_ms": 15000
+  },
+  "solver_version": "stage2-insert-enum/1.0",
+  "elapsed_ms": 0,
+  "status": "feasible",
+  "routes": [
+    {
+      "vehicle_id": "V1",
+      "order_ids": [
+        "o90",
+        "o87",
+        "o8",
+        "o82",
+        "o60",
+        "o36",
+        "o34",
+        "o1",
+        "o49"
+      ],
+      "return_s": 69894
+    },
+    {
+      "vehicle_id": "V2",
+      "order_ids": [
+        "o35",
+        "o44",
+        "o85",
+        "o88",
+        "o52"
+      ],
+      "return_s": 61393
+    },
+    {
+      "vehicle_id": "V3",
+      "order_ids": [
+        "o40",
+        "o92",
+        "o9",
+        "o21"
+      ],
+      "return_s": 60852
+    }
+  ],
+  "schedule": [
+    {
+      "vehicle_id": "V1",
+      "order_id": "o90",
+      "seq": 1,
+      "arrive_s": 1237,
+      "wait_s": 0,
+      "start_s": 1237,
+      "depart_s": 6637
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o87",
+      "seq": 2,
+      "arrive_s": 6937,
+      "wait_s": 0,
+      "start_s": 6937,
+      "depart_s": 12337
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o8",
+      "seq": 3,
+      "arrive_s": 14135,
+      "wait_s": 1165,
+      "start_s": 15300,
+      "depart_s": 20700
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o82",
+      "seq": 4,
+      "arrive_s": 23053,
+      "wait_s": 0,
+      "start_s": 23053,
+      "depart_s": 28453
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o60",
+      "seq": 5,
+      "arrive_s": 32295,
+      "wait_s": 1425,
+      "start_s": 33720,
+      "depart_s": 39120
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o36",
+      "seq": 6,
+      "arrive_s": 42120,
+      "wait_s": 0,
+      "start_s": 42120,
+      "depart_s": 47520
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o34",
+      "seq": 7,
+      "arrive_s": 47700,
+      "wait_s": 0,
+      "start_s": 47700,
+      "depart_s": 53100
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o1",
+      "seq": 8,
+      "arrive_s": 55714,
+      "wait_s": 0,
+      "start_s": 55714,
+      "depart_s": 61114
+    },
+    {
+      "vehicle_id": "V1",
+      "order_id": "o49",
+      "seq": 9,
+      "arrive_s": 63341,
+      "wait_s": 0,
+      "start_s": 63341,
+      "depart_s": 68741
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o35",
+      "seq": 1,
+      "arrive_s": 2285,
+      "wait_s": 14695,
+      "start_s": 16980,
+      "depart_s": 22380
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o44",
+      "seq": 2,
+      "arrive_s": 24028,
+      "wait_s": 0,
+      "start_s": 24028,
+      "depart_s": 29428
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o85",
+      "seq": 3,
+      "arrive_s": 32240,
+      "wait_s": 1060,
+      "start_s": 33300,
+      "depart_s": 38700
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o88",
+      "seq": 4,
+      "arrive_s": 38880,
+      "wait_s": 0,
+      "start_s": 38880,
+      "depart_s": 44280
+    },
+    {
+      "vehicle_id": "V2",
+      "order_id": "o52",
+      "seq": 5,
+      "arrive_s": 47110,
+      "wait_s": 7610,
+      "start_s": 54720,
+      "depart_s": 60120
+    },
+    {
+      "vehicle_id": "V3",
+      "order_id": "o40",
+      "seq": 1,
+      "arrive_s": 1237,
+      "wait_s": 14603,
+      "start_s": 15840,
+      "depart_s": 21240
+    },
+    {
+      "vehicle_id": "V3",
+      "order_id": "o92",
+      "seq": 2,
+      "arrive_s": 25058,
+      "wait_s": 0,
+      "start_s": 25058,
+      "depart_s": 30458
+    },
+    {
+      "vehicle_id": "V3",
+      "order_id": "o9",
+      "seq": 3,
+      "arrive_s": 32417,
+      "wait_s": 0,
+      "start_s": 32417,
+      "depart_s": 37817
+    },
+    {
+      "vehicle_id": "V3",
+      "order_id": "o21",
+      "seq": 4,
+      "arrive_s": 38999,
+      "wait_s": 15841,
+      "start_s": 54840,
+      "depart_s": 60240
+    }
+  ],
+  "metrics": {
+    "total_travel_time_s": 38540,
+    "total_wait_s": 56399,
+    "vehicles_used": 3,
+    "orders_served": 18,
+    "orders_total": 18,
+    "max_return_s": 69894,
+    "diagnostics": {
+      "inserted": [
+        {
+          "order_id": "o9",
+          "inserted": true,
+          "vehicle_id": "V3",
+          "position": 2,
+          "travel_delta_s": 513
+        },
+        {
+          "order_id": "o21",
+          "inserted": true,
+          "vehicle_id": "V3",
+          "position": 3,
+          "travel_delta_s": 588
+        },
+        {
+          "order_id": "o44",
+          "inserted": true,
+          "vehicle_id": "V2",
+          "position": 1,
+          "travel_delta_s": 393
+        }
+      ]
+    },
+    "elapsed_validate_ms": 0
+  },
+  "diff": {},
+  "validation": {
+    "independent_ok": true,
+    "route_count": 3,
+    "issues": [],
+    "routes": [
+      {
+        "vehicle_id": "V1",
+        "order_ids": [
+          "o90",
+          "o87",
+          "o8",
+          "o82",
+          "o60",
+          "o36",
+          "o34",
+          "o1",
+          "o49"
+        ],
+        "return_s": 69894,
+        "total_load": 140.0,
+        "travel_time_s": 18704,
+        "ok": true,
+        "issues": [],
+        "stops": [
+          {
+            "vehicle_id": "V1",
+            "order_id": "o90",
+            "seq": 1,
+            "arrive_s": 1237,
+            "wait_s": 0,
+            "start_s": 1237,
+            "depart_s": 6637
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o87",
+            "seq": 2,
+            "arrive_s": 6937,
+            "wait_s": 0,
+            "start_s": 6937,
+            "depart_s": 12337
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o8",
+            "seq": 3,
+            "arrive_s": 14135,
+            "wait_s": 1165,
+            "start_s": 15300,
+            "depart_s": 20700
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o82",
+            "seq": 4,
+            "arrive_s": 23053,
+            "wait_s": 0,
+            "start_s": 23053,
+            "depart_s": 28453
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o60",
+            "seq": 5,
+            "arrive_s": 32295,
+            "wait_s": 1425,
+            "start_s": 33720,
+            "depart_s": 39120
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o36",
+            "seq": 6,
+            "arrive_s": 42120,
+            "wait_s": 0,
+            "start_s": 42120,
+            "depart_s": 47520
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o34",
+            "seq": 7,
+            "arrive_s": 47700,
+            "wait_s": 0,
+            "start_s": 47700,
+            "depart_s": 53100
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o1",
+            "seq": 8,
+            "arrive_s": 55714,
+            "wait_s": 0,
+            "start_s": 55714,
+            "depart_s": 61114
+          },
+          {
+            "vehicle_id": "V1",
+            "order_id": "o49",
+            "seq": 9,
+            "arrive_s": 63341,
+            "wait_s": 0,
+            "start_s": 63341,
+            "depart_s": 68741
+          }
+        ]
+      },
+      {
+        "vehicle_id": "V2",
+        "order_ids": [
+          "o35",
+          "o44",
+          "o85",
+          "o88",
+          "o52"
+        ],
+        "return_s": 61393,
+        "total_load": 90.0,
+        "travel_time_s": 11028,
+        "ok": true,
+        "issues": [],
+        "stops": [
+          {
+            "vehicle_id": "V2",
+            "order_id": "o35",
+            "seq": 1,
+            "arrive_s": 2285,
+            "wait_s": 14695,
+            "start_s": 16980,
+            "depart_s": 22380
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o44",
+            "seq": 2,
+            "arrive_s": 24028,
+            "wait_s": 0,
+            "start_s": 24028,
+            "depart_s": 29428
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o85",
+            "seq": 3,
+            "arrive_s": 32240,
+            "wait_s": 1060,
+            "start_s": 33300,
+            "depart_s": 38700
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o88",
+            "seq": 4,
+            "arrive_s": 38880,
+            "wait_s": 0,
+            "start_s": 38880,
+            "depart_s": 44280
+          },
+          {
+            "vehicle_id": "V2",
+            "order_id": "o52",
+            "seq": 5,
+            "arrive_s": 47110,
+            "wait_s": 7610,
+            "start_s": 54720,
+            "depart_s": 60120
+          }
+        ]
+      },
+      {
+        "vehicle_id": "V3",
+        "order_ids": [
+          "o40",
+          "o92",
+          "o9",
+          "o21"
+        ],
+        "return_s": 60852,
+        "total_load": 60.0,
+        "travel_time_s": 8808,
+        "ok": true,
+        "issues": [],
+        "stops": [
+          {
+            "vehicle_id": "V3",
+            "order_id": "o40",
+            "seq": 1,
+            "arrive_s": 1237,
+            "wait_s": 14603,
+            "start_s": 15840,
+            "depart_s": 21240
+          },
+          {
+            "vehicle_id": "V3",
+            "order_id": "o92",
+            "seq": 2,
+            "arrive_s": 25058,
+            "wait_s": 0,
+            "start_s": 25058,
+            "depart_s": 30458
+          },
+          {
+            "vehicle_id": "V3",
+            "order_id": "o9",
+            "seq": 3,
+            "arrive_s": 32417,
+            "wait_s": 0,
+            "start_s": 32417,
+            "depart_s": 37817
+          },
+          {
+            "vehicle_id": "V3",
+            "order_id": "o21",
+            "seq": 4,
+            "arrive_s": 38999,
+            "wait_s": 15841,
+            "start_s": 54840,
+            "depart_s": 60240
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": [],
+  "assumptions": [
+    "车辆从仓库固定时刻 available_from_s 出发，服务开始=max(到达,ready_s)，等待=服务开始-到达；返回不得晚于 return_by_s",
+    "容量为配送语义：单路线装载=路线全部订单 demand 之和",
+    "可行性由独立校验器依据输入矩阵重算复核，不采信求解器标志"
+  ]
+}
