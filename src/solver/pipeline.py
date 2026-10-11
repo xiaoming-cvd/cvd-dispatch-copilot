@@ -116,16 +116,24 @@ def solve(
     time_limit_ms: int = 10_000,
     cost_cap_ratio: float | None = None,
     reference_results=None,
+    backend: str | None = None,
 ) -> SolveOutcome:
     """对一个完整场景跑一种基线方法，返回规范 SolveResult。
 
     cost_cap_ratio / reference_results 仅对 low_disruption 生效：
     业务成本上限 = cost_cap_ratio × reference_best_cost（跨方法已验证
     方案的最低成本）；reference_results 为 [(name, routes), ...]。
+
+    backend 仅对 rebuild 生效（2026-10-11 队长决策：默认 OR-Tools，
+    交付无 COPT 许可可跑；COPT 为可选后端且必须显式指定）：
+    None → rebuild.BACKEND（ortools）；显式 "copt"/"ortools" 原样执行，
+    结果 metrics 记录 backend/backend_requested，禁止静默回退。
     """
     started = time.monotonic()
     if method not in METHODS:
         raise ValueError(f"E_METHOD: 未知方法 {method}，可选 {METHODS}")
+    if backend is not None and backend.lower() not in ("copt", "ortools"):
+        raise ValueError(f"E_BACKEND: 未知重排后端 {backend}（仅 rebuild 支持，可选 copt/ortools）")
 
     report = validate_scenario(scn)
     if not report.ok:
@@ -168,20 +176,26 @@ def solve(
                 return SolveOutcome(result=result, validation=None)
             extra = {"diagnostics": diag}
         elif method == "rebuild":
-            try:
-                from .copt_core import SOLVER_VERSION_COPT  # noqa: F401  # 延迟导入（P1 F）
-            except ImportError:
-                result = _assemble(
-                    scn, method, time_limit_ms, started,
-                    SolveStatus.ERROR, [], None,
-                    warnings=["COPT 后端不可用（import coptpy 失败）；rebuild "
-                              "需要 COPT 或显式改用 OR-Tools 后端，插单与"
-                              "低扰动方法不受影响"],
-                    assumptions=[],
-                )
-                return SolveOutcome(result=result, validation=None)
+            use_backend = (backend or rebuild_mod.BACKEND).lower()
+            if use_backend == "copt":
+                try:
+                    from .copt_core import SOLVER_VERSION_COPT  # noqa: F401  # 延迟导入（P1 F）
+                except ImportError:
+                    # 无 COPT 许可环境显式选 copt：如实报错，绝不静默回退（Q3）
+                    result = _assemble(
+                        scn, method, time_limit_ms, started,
+                            SolveStatus.ERROR, [], None,
+                        warnings=["COPT 后端不可用（import coptpy 失败）；"
+                                  "本结果无求解发生。请改用默认 OR-Tools 后端"
+                                  "（backend=ortools）或在有许可的环境运行"],
+                        assumptions=[],
+                        extra_metrics={"backend_requested": "copt",
+                                       "backend": None},
+                    )
+                    return SolveOutcome(result=result, validation=None)
             t_solve = time.monotonic()
-            outcome = rebuild_mod.rebuild_all(scn, time_limit_ms)
+            outcome = rebuild_mod.rebuild_all(scn, time_limit_ms,
+                                              backend=use_backend)
             solve_ms = int((time.monotonic() - t_solve) * 1000)
             served = [oid for seq in outcome.routes for oid in seq]
             expected = sorted(o.order_id for o in scn.orders)
@@ -208,6 +222,7 @@ def solve(
                     extra_metrics={"solver_status": outcome.raw_status,
                                    "backend": outcome.backend,
                                    "backend_version": outcome.backend_version,
+                                   "backend_requested": use_backend,
                                    "status_detail": outcome.status_detail,
                                    "elapsed_solve_ms": solve_ms},
                 )
@@ -225,6 +240,7 @@ def solve(
                     warnings=[reason], assumptions=assumptions,
                     extra_metrics={"solver_status": outcome.raw_status,
                                    "backend": outcome.backend,
+                                   "backend_requested": use_backend,
                                    "status_detail": outcome.status_detail,
                                    "elapsed_solve_ms": solve_ms},
                 )
@@ -232,6 +248,7 @@ def solve(
             routes = rebuild_mod.outcome_to_routes(scn, outcome)
             extra = {"solver_status": outcome.raw_status,
                      "backend": outcome.backend,
+                     "backend_requested": use_backend,
                      "backend_version": outcome.backend_version,
                      "status_detail": outcome.status_detail,
                      "elapsed_solve_ms": solve_ms}

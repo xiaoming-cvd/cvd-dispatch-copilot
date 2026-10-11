@@ -242,9 +242,14 @@ class TestNoCoptIsolation:
                 plan_routes=[("V1", ["A"])])
             ins = pipe.solve(scn, "insert", time_limit_ms=2000)
             assert ins.result.status == SolveStatus.FEASIBLE
+            # 2026-10-11 决策：rebuild 默认 OR-Tools，无 COPT 依赖照常可行
             rb = pipe.solve(scn, "rebuild", time_limit_ms=2000)
-            assert rb.result.status == SolveStatus.ERROR
-            assert any("COPT" in w for w in rb.result.warnings)
+            assert rb.result.status == SolveStatus.FEASIBLE
+            assert rb.result.metrics.get("backend") == "ortools"
+            # 显式要求 COPT 而无 coptpy：ERROR + 可理解警告，绝不静默回退
+            rb_copt = pipe.solve(scn, "rebuild", time_limit_ms=2000, backend="copt")
+            assert rb_copt.result.status == SolveStatus.ERROR
+            assert any("COPT" in w for w in rb_copt.result.warnings)
         finally:
             sys.modules.pop("coptpy", None)
             importlib.reload(pipe)  # 恢复正常模块

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>城配调度副驾 · Web 工作台</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --line:#e3e6ea; --ink:#1f2733; --mut:#66707d;
+          --pri:#1f6feb; --ok:#1a7f37; --warn:#9a6700; --err:#cf222e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.55 "Segoe UI","Microsoft YaHei",sans-serif;
+         background:var(--bg); color:var(--ink); }
+  header { background:#17202b; color:#e8edf3; padding:12px 20px; }
+  header h1 { margin:0; font-size:18px; display:inline-block; }
+  header .tag { font-size:12px; background:#2d3a4a; border-radius:4px;
+                padding:2px 8px; margin-left:10px; color:#9fc3ff; }
+  header .notice { font-size:12px; color:#b7c3d0; margin-top:4px; }
+  main { display:grid; grid-template-columns:340px 1fr; gap:16px;
+         padding:16px 20px; max-width:1400px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px;
+          padding:14px 16px; margin-bottom:16px; }
+  .card h2 { margin:0 0 10px; font-size:15px; }
+  button { background:var(--pri); color:#fff; border:0; border-radius:5px;
+           padding:6px 12px; cursor:pointer; font-size:13px; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.ghost { background:#fff; color:var(--pri); border:1px solid var(--pri); }
+  button.warn { background:var(--warn); }
+  button.sm { padding:3px 8px; font-size:12px; }
+  input, select, textarea { width:100%; padding:6px 8px; border:1px solid var(--line);
+           border-radius:5px; font:inherit; margin:4px 0 8px; }
+  textarea { min-height:64px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { border-bottom:1px solid var(--line); padding:5px 8px; text-align:left;
+           vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .muted { color:var(--mut); font-size:12px; }
+  .st-ok { color:var(--ok); } .st-err { color:var(--err); }
+  .st-warn { color:var(--warn); }
+  .pill { display:inline-block; border-radius:10px; padding:1px 8px; font-size:11px;
+          background:#eef1f4; }
+  .pill.new { background:#fff3cd; color:#7a5b00; }
+  .pill.warn { background:#ffebe9; color:var(--err); }
+  .pill.ok { background:#dafbe1; color:var(--ok); }
+  .sel { cursor:pointer; } .sel:hover td { background:#f0f4fa; }
+  .sel.active td { background:#e3edfb; }
+  .kv { display:grid; grid-template-columns:130px 1fr; gap:2px 10px; font-size:13px; }
+  .kv dt { color:var(--mut); } .kv dd { margin:0; word-break:break-all; }
+  .hidden { display:none !important; }
+  pre { background:#f6f8fa; border:1px solid var(--line); border-radius:5px;
+        padding:8px; overflow:auto; font-size:12px; }
+  .job-err { color:var(--err); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>城配调度副驾 <span class="tag">阶段 5 · Web 工作台</span></h1>
+  <div class="notice">本页所有线路均为调度示意图，非导航线路，请勿据此驾驶。所有结果须经人工复核后方可执行。</div>
+  <div class="notice" id="llmNotice"></div>
+</header>
+<main>
+  <!-- ================= 左栏 ================= -->
+  <section>
+    <div class="card">
+      <h2>场景</h2>
+      <div class="row" style="margin-bottom:8px">
+        <button class="ghost sm" id="btnRefresh">刷新列表</button>
+        <a href="/api/template" download>下载上传模板</a>
+      </div>
+      <input type="file" id="fileUpload" accept=".json,application/json">
+      <button class="sm" id="btnUpload">上传场景 JSON</button>
+      <div id="uploadMsg" class="muted"></div>
+      <table id="tblScenarios">
+        <thead><tr><th>场景</th><th>来源</th><th>原计划</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card hidden" id="cardDetail">
+      <h2>场景详情</h2>
+      <dl class="kv" id="detailKv"></dl>
+      <div id="detailIssues"></div>
+    </div>
+  </section>
+
+  <!-- ================= 右栏 ================= -->
+  <section>
+    <div class="card hidden" id="cardBaseline">
+      <h2>1 · 生成原计划（baseline）</h2>
+      <div class="row">
+        <label class="muted">预算 ms</label>
+        <input type="number" id="baselineBudget" value="60000" style="width:120px">
+        <button id="btnBaseline">提交 baseline 任务</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cardConstraints">
+      <h2>2 · 变更约束（自然语言 → 草案）</h2>
+      <div class="muted" id="demoNotice"></div>
+      <textarea id="constraintText" placeholder="例：把订单 o7 改到明天上午，车辆 V2 下午不可用…"></textarea>
+      <button id="btnDraft">生成草案</button>
+      <div id="draftBox"></div>
+    </div>
+
+    <div class="card hidden" id="cardSolve">
+      <h2>3 · 求解</h2>
+      <div class="row">
+        <label class="muted">方法</label>
+        <select id="solveMethod" style="width:170px">
+          <option value="insert">insert（插入）</option>
+          <option value="rebuild">rebuild（完全重排）</option>
+          <option value="low_disruption">low_disruption（低扰动）</option>
+        </select>
+        <label class="muted" id="backendLabel">后端</label>
+        <select id="solveBackend" style="width:130px">
+          <option value="ortools" selected>OR-Tools（默认）</option>
+          <option value="copt">COPT（可选）</option>
+        </select>
+        <label class="muted">预算 ms</label>
+        <input type="number" id="solveBudget" value="60000" style="width:120px">
+        <label class="muted">乐观锁版本（可选）</label>
+        <input type="number" id="solveBaseVersion" placeholder="留空跳过" style="width:110px">
+        <button id="btnSolve">提交求解任务</button>
+      </div>
+      <div class="muted">正式评测口径：三方法统一 60 秒端到端预算。COPT 超时记为
+        TIMEOUT_NO_SOLUTION（≠不可行）；OR-Tools 可行解≠已证明最优；实际后端逐条记录在结果中。</div>
+    </div>
+
+    <div class="card">
+      <h2>任务队列</h2>
+      <div class="row"><button class="ghost sm" id="btnRefreshJobs">刷新任务</button>
+        <span class="muted" id="jobHint"></span></div>
+      <table id="tblJobs">
+        <thead><tr><th>任务</th><th>类型</th><th>状态</th><th>提交时间</th><th>说明</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card hidden" id="cardResult">
+      <h2>结果</h2>
+      <dl class="kv" id="resultKv"></dl>
+      <div class="row" style="margin:8px 0">
+        <button class="ghost sm" id="btnExportCsv">导出 CSV</button>
+        <button class="ghost sm" id="btnExportJson">导出 JSON</button>
+        <span class="muted" id="exportMsg"></span>
+      </div>
+      <h2 style="margin-top:14px">原计划 vs 新计划</h2>
+      <div class="muted">黄色 = 新插入/变更任务</div>
+      <table id="tblCompare">
+        <thead><tr><th>车辆</th><th>原计划顺序</th><th>新计划顺序</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h2 style="margin-top:14px">时刻表</h2>
+      <table id="tblTimetable">
+        <thead><tr><th>车辆</th><th>订单</th><th>到达 s</th><th>等待 s</th>
+          <th>开始 s</th><th>离开 s</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h2 style="margin-top:14px">求解器自报指标（仅供对照，以独立校验为准）</h2>
+      <pre id="metricsPre"></pre>
+    </div>
+
+    <div class="card">
+      <h2>历史（版本与已完成求解）</h2>
+      <div id="historyBox" class="muted">选择场景后显示</div>
+    </div>
+  </section>
+</main>
+<script>
+"use strict";
+/* 约定：所有动态文本一律 textContent，禁止 innerHTML 渲染数据（防 HTML 注入）。 */
+const $ = id => document.getElementById(id);
+const sel = { scenario: null, job: null };
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const ct = r.headers.get("content-type") || "";
+  const body = ct.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) {
+    const msg = typeof body === "object" && body.detail !== undefined
+      ? (typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail))
+      : String(body);
+    const err = new Error(msg); err.status = r.status; throw err;
+  }
+  return body;
+}
+
+function td(tr, text, cls) {
+  const d = document.createElement("td");
+  if (cls) d.className = cls;
+  d.textContent = text == null ? "" : String(text);
+  tr.appendChild(d); return d;
+}
+function kv(dl, k, v) {
+  const dt = document.createElement("dt"); dt.textContent = k;
+  const dd = document.createElement("dd");
+  if (v instanceof Node) dd.appendChild(v); else dd.textContent = String(v ?? "");
+  dl.appendChild(dt); dl.appendChild(dd);
+}
+
+/* ---------- 场景 ---------- */
+async function loadScenarios() {
+  const tbody = $("tblScenarios").querySelector("tbody");
+  tbody.textContent = "";
+  try {
+    const data = await api("/api/scenarios");
+    for (const s of data.scenarios) {
+      const tr = document.createElement("tr");
+      tr.className = "sel";
+      if (sel.scenario === s.scenario_id) tr.classList.add("active");
+      td(tr, s.scenario_id);
+      td(tr, (s.source || "?") + (s.uploaded ? "（上传）" : ""));
+      td(tr, s.materialized ? "已生成" : "待 baseline",
+         s.materialized ? "st-ok" : "st-warn");
+      tr.onclick = () => selectScenario(s.scenario_id);
+      tbody.appendChild(tr);
+    }
+    if (!data.scenarios.length) {
+      const tr = document.createElement("tr");
+      td(tr, "暂无场景", "muted"); tbody.appendChild(tr);
+    }
+  } catch (e) { const tr = document.createElement("tr"); td(tr, "加载失败：" + e.message, "st-err"); tbody.appendChild(tr); }
+}
+
+async function selectScenario(sid) {
+  sel.scenario = sid; sel.job = null;
+  $("cardResult").classList.add("hidden");
+  for (const id of ["cardBaseline","cardConstraints","cardSolve"]) $(id).classList.remove("hidden");
+  const card = $("cardDetail"); card.classList.remove("hidden");
+  const dl = $("detailKv"); dl.textContent = "";
+  const issuesBox = $("detailIssues"); issuesBox.textContent = "";
+  try {
+    const d = await api("/api/scenarios/" + encodeURIComponent(sid));
+    kv(dl, "场景", d.scenario_id);
+    kv(dl, "订单 / 车辆", d.n_orders + " / " + d.n_vehicles);
+    kv(dl, "草稿 input_hash", d.draft_input_hash);
+    if (d.materialized) {
+      kv(dl, "已物化版本", "v" + d.version);
+      kv(dl, "场景 input_hash", d.input_hash);
+      kv(dl, "原计划路线数", String(d.n_plan_routes));
+      $("solveBaseVersion").placeholder = "当前 v" + d.version;
+    }
+    if (d.issues && d.issues.length) {
+      const ul = document.createElement("ul");
+      for (const it of d.issues) {
+        const li = document.createElement("li");
+        li.className = "st-warn"; li.textContent = it.code + "：" + it.message;
+        ul.appendChild(li);
+      }
+      issuesBox.appendChild(ul);
+    } else if (d.issues) {
+      const p = document.createElement("div"); p.className = "st-ok";
+      p.textContent = "结构校验通过"; issuesBox.appendChild(p);
+    }
+    loadHistory(sid);
+  } catch (e) {
+    const p = document.createElement("div"); p.className = "st-err";
+    p.textContent = "详情加载失败：" + e.message; issuesBox.appendChild(p);
+  }
+  loadScenarios();
+}
+
+/* ---------- 上传 ---------- */
+$("btnUpload").onclick = async () => {
+  const f = $("fileUpload").files[0];
+  const box = $("uploadMsg"); box.className = "muted";
+  if (!f) { box.textContent = "请先选择 JSON 文件"; return; }
+  try {
+    const text = await f.text();
+    await api("/api/scenarios/upload", { method: "POST", body: text,
+      headers: { "Content-Type": "application/json" } });
+    box.className = "st-ok"; box.textContent = "上传成功";
+    $("fileUpload").value = ""; loadScenarios();
+  } catch (e) {
+    box.className = "st-err"; box.textContent = "上传失败（" + e.status + "）：" + e.message;
+  }
+};
+
+/* ---------- baseline ---------- */
+$("btnBaseline").onclick = async () => {
+  if (!sel.scenario) return;
+  try {
+    await api("/api/baseline", { method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ scenario_id: sel.scenario,
+        budget_ms: Number($("baselineBudget").value) || 60000 }) });
+    refreshJobs();
+  } catch (e) { alert("baseline 提交失败：" + e.message); }
+};
+
+/* ---------- 约束草案 ---------- */
+let currentDraft = null;
+$("btnDraft").onclick = async () => {
+  if (!sel.scenario) return;
+  const box = $("draftBox"); box.textContent = "生成中…";
+  try {
+    const d = await api("/api/constraints/draft", { method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ scenario_id: sel.scenario,
+                             text: $("constraintText").value }) });
+    currentDraft = d.draft;
+    renderDraft(d);
+  } catch (e) {
+    box.textContent = "";
+    const p = document.createElement("p"); p.className = "st-err";
+    p.textContent = "草案生成失败（" + e.status + "）：" + e.message;
+    box.appendChild(p);
+  }
+};
+
+function renderDraft(d) {
+  const box = $("draftBox"); box.textContent = "";
+  const draft = d.draft;
+  if (d.demo_notice || d.demo_mode) {
+    const p = document.createElement("p"); p.className = "st-warn";
+    p.textContent = "演示模式：" + (d.demo_notice || "LLM 为模拟返回，草案仅供流程演示");
+    box.appendChild(p);
+  }
+  const h = document.createElement("p");
+  h.textContent = "草案 " + draft.draft_id + " · 基于 v" + draft.base_version + " · 状态 " + draft.status;
+  box.appendChild(h);
+
+  const items = draft.items || [];
+  if (items.length) {
+    const tbl = document.createElement("table");
+    const thead = document.createElement("thead");
+    const htr = document.createElement("tr");
+    ["接受","条目","类型","目标","变更"].forEach(t => { const th = document.createElement("th"); th.textContent = t; htr.appendChild(th); });
+    thead.appendChild(htr); tbl.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    const checks = [];
+    items.forEach((it, i) => {
+      const tr = document.createElement("tr");
+      const c = document.createElement("input"); c.type = "checkbox"; c.checked = false;
+      checks.push(c);
+      const ctd = document.createElement("td"); ctd.appendChild(c);
+      tr.appendChild(ctd);
+      td(tr, "#" + (i + 1));
+      td(tr, it.kind);
+      td(tr, it.target_id);
+      td(tr, JSON.stringify(it.change));
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); box.appendChild(tbl);
+
+    const btnAll = document.createElement("button");
+    btnAll.className = "warn sm"; btnAll.textContent = "全部接受（需显式点击）";
+    btnAll.onclick = () => confirmDraft(true, null);
+    const btnSel = document.createElement("button");
+    btnSel.className = "sm"; btnSel.textContent = "接受勾选条目";
+    btnSel.onclick = () => {
+      const decisions = {};
+      checks.forEach((c, i) => { decisions[i] = c.checked; });
+      confirmDraft(false, decisions);
+    };
+    const row = document.createElement("div"); row.className = "row";
+    row.style.marginTop = "8px";
+    row.appendChild(btnAll); row.appendChild(btnSel);
+    box.appendChild(row);
+    const note = document.createElement("div"); note.className = "muted";
+    note.textContent = "默认不勾选任何条目；须逐项勾选或显式点击「全部接受」。";
+    box.appendChild(note);
+  }
+  for (const [label, key] of [["问题","questions"],["缺字段","missing"],["已拒绝","rejected"]]) {
+    const arr = draft[key] || [];
+    if (arr.length) {
+      const p = document.createElement("p"); p.className = "st-warn";
+      p.textContent = label + "：" + arr.join("；"); box.appendChild(p);
+    }
+  }
+}
+
+async function confirmDraft(acceptAll, decisions) {
+  try {
+    const body = { scenario_id: sel.scenario, base_version: currentDraft.base_version,
+                   accept_all: acceptAll };
+    if (decisions) body.decisions = decisions;
+    const r = await api("/api/constraints/" + encodeURIComponent(currentDraft.draft_id) + "/confirm",
+      { method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body) });
+    const p = document.createElement("p"); p.className = "st-ok";
+    p.textContent = "已确认 → 场景 v" + r.scenario_version + "（input_hash " + r.scenario_input_hash + "）";
+    $("draftBox").appendChild(p);
+    selectScenario(sel.scenario);
+  } catch (e) { alert("确认失败（" + e.status + "）：" + e.message); }
+}
+
+/* ---------- 求解 ---------- */
+$("solveMethod").onchange = () => {
+  $("solveBackend").disabled = $("solveMethod").value !== "rebuild";
+  $("backendLabel").style.opacity = $("solveMethod").value === "rebuild" ? 1 : .4;
+};
+$("solveBackend").disabled = true;
+$("btnSolve").onclick = async () => {
+  if (!sel.scenario) return;
+  const body = { scenario_id: sel.scenario,
+    method: $("solveMethod").value,
+    budget_ms: Number($("solveBudget").value) || 60000 };
+  if ($("solveMethod").value === "rebuild") body.backend = $("solveBackend").value;
+  const v = $("solveBaseVersion").value;
+  if (v !== "") body.base_version = Number(v);
+  try {
+    await api("/api/solve", { method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(body) });
+    refreshJobs();
+  } catch (e) { alert("求解提交失败（" + e.status + "）：" + e.message); }
+};
+
+/* ---------- 任务轮询 ---------- */
+let pollTimer = null;
+async function refreshJobs() {
+  const tbody = $("tblJobs").querySelector("tbody");
+  tbody.textContent = "";
+  try {
+    const data = await api("/api/jobs");
+    let active = 0;
+    for (const j of data.jobs) {
+      const tr = document.createElement("tr");
+      tr.className = "sel";
+      if (sel.job === j.job_id) tr.classList.add("active");
+      td(tr, j.job_id);
+      td(tr, j.kind);
+      const stTd = td(tr, j.status,
+        j.status === "succeeded" ? "st-ok" : (j.status === "failed" || j.status === "interrupted") ? "st-err" : "st-warn");
+      if (j.error && j.status !== "succeeded") stTd.title = j.error;
+      td(tr, (j.created_at || "").replace("T", " ").slice(0, 19));
+      td(tr, j.error ? "失败：" + j.error : (j.status === "interrupted" ? "服务重启打断" : ""),
+         j.error || j.status === "interrupted" ? "job-err" : "muted");
+      tr.onclick = () => {
+        sel.job = j.job_id;
+        if (j.kind === "solve" && j.status === "succeeded") loadResult(j.job_id);
+        refreshJobs();
+      };
+      tbody.appendChild(tr);
+      if (j.status === "queued" || j.status === "running") active++;
+    }
+    $("jobHint").textContent = data.jobs.length ? "" : "暂无任务";
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(refreshJobs, active ? 1500 : 6000);
+  } catch (e) { clearTimeout(pollTimer); pollTimer = setTimeout(refreshJobs, 6000); }
+}
+$("btnRefreshJobs").onclick = refreshJobs;
+
+/* ---------- 结果 ---------- */
+async function loadResult(jobId) {
+  const card = $("cardResult"); card.classList.remove("hidden");
+  const dl = $("resultKv"); dl.textContent = "";
+  try {
+    const d = await api("/api/jobs/" + encodeURIComponent(jobId) + "/result.json");
+    const r = d.result || {};
+    const m = r.metrics || {};
+    kv(dl, "任务", d.job_id);
+    kv(dl, "方法 / 后端（请求）", d.method + " / " + (d.backend_requested || "-"));
+    kv(dl, "实际后端", d.backend || "-");
+    kv(dl, "预算 / 耗时", (d.budget_ms ?? "?") + " ms / " + (r.elapsed_ms ?? "?") + " ms");
+    kv(dl, "求解状态", r.status || "?");
+    kv(dl, "是否找到可行解", d.has_solution ? "是" : "否（≠证明无解，除非状态明确 INFEASIBLE）");
+    kv(dl, "独立校验", (r.validation && r.validation.independent_ok)
+        ? "通过" : "未通过（禁止导出）");
+    const notice = document.createElement("div"); notice.className = "muted";
+    notice.textContent = "求解器自报指标与状态仅作对照；可行性与最优性以独立校验与评测口径为准。";
+    dl.appendChild(notice);
+
+    renderCompare(d.original_plan || [], r.routes || []);
+    renderTimetable(r.schedule || []);
+    $("metricsPre").textContent = JSON.stringify(m, null, 2);
+    $("exportMsg").textContent = (r.validation && r.validation.independent_ok)
+      ? "" : "未过独立校验，CSV 导出被禁止（红线）";
+  } catch (e) {
+    const p = document.createElement("p"); p.className = "st-err";
+    p.textContent = "结果加载失败：" + e.message; card.appendChild(p);
+  }
+}
+
+function renderCompare(original, routes) {
+  const tbody = $("tblCompare").querySelector("tbody");
+  tbody.textContent = "";
+  const origByV = {}, newIds = new Set(), newByV = {};
+  for (const r of original) origByV[r.vehicle_id] = r.order_ids;
+  for (const r of routes) {
+    newByV[r.vehicle_id] = r.order_ids;
+    for (const oid of r.order_ids) {
+      if (!(origByV[r.vehicle_id] || []).includes(oid)) newIds.add(oid);
+    }
+  }
+  const vehicles = [...new Set([...Object.keys(origByV), ...Object.keys(newByV)])];
+  for (const v of vehicles) {
+    const tr = document.createElement("tr");
+    td(tr, v);
+    const tdO = document.createElement("td");
+    (origByV[v] || []).forEach(o => { const s = document.createElement("span");
+      s.className = "pill"; s.textContent = o; s.style.marginRight = "4px"; tdO.appendChild(s); });
+    if (!(origByV[v] || []).length) tdO.textContent = "（空）";
+    tr.appendChild(tdO);
+    const tdN = document.createElement("td");
+    (newByV[v] || []).forEach(o => { const s = document.createElement("span");
+      s.className = "pill" + (newIds.has(o) ? " new" : ""); s.textContent = o;
+      s.style.marginRight = "4px"; tdN.appendChild(s); });
+    if (!(newByV[v] || []).length) tdN.textContent = "（空）";
+    tr.appendChild(tdN);
+    tbody.appendChild(tr);
+  }
+  if (!vehicles.length) {
+    const tr = document.createElement("tr");
+    td(tr, "无解（或结果为空）", "muted"); tbody.appendChild(tr);
+  }
+}
+
+function renderTimetable(schedule) {
+  const tbody = $("tblTimetable").querySelector("tbody");
+  tbody.textContent = "";
+  for (const s of schedule) {
+    const tr = document.createElement("tr");
+    td(tr, s.vehicle_id); td(tr, s.order_id); td(tr, s.arrive_s);
+    td(tr, s.wait_s); td(tr, s.start_s); td(tr, s.depart_s);
+    tbody.appendChild(tr);
+  }
+  if (!schedule.length) {
+    const tr = document.createElement("tr");
+    td(tr, "无时刻表", "muted"); tbody.appendChild(tr);
+  }
+}
+
+$("btnExportCsv").onclick = () => {
+  if (!sel.job) return;
+  window.open("/api/jobs/" + encodeURIComponent(sel.job) + "/export.csv", "_blank");
+};
+$("btnExportJson").onclick = async () => {
+  if (!sel.job) return;
+  const d = await api("/api/jobs/" + encodeURIComponent(sel.job) + "/result.json");
+  const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "result_" + sel.job + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+};
+
+/* ---------- 历史 ---------- */
+async function loadHistory(sid) {
+  const box = $("historyBox"); box.textContent = "加载中…";
+  try {
+    const d = await api("/api/scenarios/" + encodeURIComponent(sid) + "/history");
+    box.textContent = "";
+    if (!d.versions.length && !d.results.length) { box.textContent = "暂无历史"; return; }
+    if (d.versions.length) {
+      const p = document.createElement("div");
+      p.textContent = "版本：" + d.versions.map(v => "v" + v.version).join("，");
+      box.appendChild(p);
+    }
+    if (d.results.length) {
+      const tbl = document.createElement("table");
+      const thead = document.createElement("thead");
+      const htr = document.createElement("tr");
+      ["任务","方法","后端","预算 ms","可行","状态","成本 s","耗时 ms"].forEach(t => {
+        const th = document.createElement("th"); th.textContent = t; htr.appendChild(th); });
+      thead.appendChild(htr); tbl.appendChild(thead);
+      const tbody = document.createElement("tbody");
+      for (const r of d.results) {
+        const tr = document.createElement("tr");
+        td(tr, r.job_id); td(tr, r.method); td(tr, r.backend || "-");
+        td(tr, r.budget_ms); td(tr, r.has_solution ? "是" : "否");
+        td(tr, r.status); td(tr, r.cost_s ?? "-"); td(tr, r.elapsed_ms ?? "-");
+        tbody.appendChild(tr);
+      }
+      tbl.appendChild(tbody); box.appendChild(tbl);
+    }
+  } catch (e) { box.textContent = "历史加载失败：" + e.message; }
+}
+
+/* ---------- 启动 ---------- */
+(async function init() {
+  try {
+    const h = await api("/api/health");
+    if (h.llm && h.llm.demo_mode) $("llmNotice").textContent = "LLM 演示模式已开启（模拟返回，仅供流程演示）";
+  } catch (e) { /* 忽略 */ }
+  $("btnRefresh").onclick = loadScenarios;
+  loadScenarios(); refreshJobs();
+})();
+</script>
+</body>
+</html>

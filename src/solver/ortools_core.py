@@ -136,7 +136,16 @@ def solve_vrptw(
                     seq.append(selected[node - 1].order_id)
                 idx = solution.Value(routing.NextVar(idx))
         routes.append(tuple(seq))
-    return OrtoolsOutcome(raw_status=raw, routes=tuple(routes))
+    return OrtoolsOutcome(raw_status=raw, routes=tuple(routes),
+                          backend="ortools", backend_version=_ortools_version())
+
+
+def _ortools_version() -> str:
+    try:
+        import ortools  # noqa: F401
+        return getattr(ortools, "__version__", "")
+    except Exception:
+        return ""
 
 
 def _node_at(selected: list, i: int, scn: Scenario) -> str:

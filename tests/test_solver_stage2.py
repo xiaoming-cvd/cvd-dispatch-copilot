@@ -127,14 +127,15 @@ class TestRebuildBaseline:
 
     def test_proven_infeasible_when_capacity_insufficient(self):
         # 总需求 7 > 总容量 6（V1=4 装 o1+o2，V2=2 装 o3；新任务 o4 无处可放）：
-        # COPT 应证明 MIP 不可行（OR-Tools CP 对该类情形只返回 FAIL，无法证明）
+        # COPT 应证明 MIP 不可行（OR-Tools CP 对该类情形只返回 FAIL，无法证明）。
+        # 2026-10-11 决策：rebuild 默认 OR-Tools，证明不可行须显式 backend="copt"。
         def vov(vehicles):
             return [vehicles[0].model_copy(update={"capacity": 4}),
                     vehicles[1].model_copy(update={"capacity": 2})]
         draft = _tiny_draft(vehicle_overrides=vov)
         plan = generate_original_plan(draft, time_limit_ms=5000)
         scn = draft.to_scenario(plan)
-        outcome = solve(scn, "rebuild", time_limit_ms=5000)
+        outcome = solve(scn, "rebuild", time_limit_ms=5000, backend="copt")
         assert outcome.result.status == SolveStatus.PROVEN_INFEASIBLE
 
     def test_locks_can_make_rebuild_infeasible(self):
@@ -148,7 +149,8 @@ class TestRebuildBaseline:
             RelativeOrderLock(vehicle_id="V1", order_ids=["o2", "o1"]),
         ])
         scn = draft.to_scenario(plan).model_copy(update={"locks": locks})
-        outcome = solve(scn, "rebuild", time_limit_ms=5000)
+        # 证明无解依赖 COPT MIP（OR-Tools CP 无法证明），须显式指定
+        outcome = solve(scn, "rebuild", time_limit_ms=5000, backend="copt")
         assert outcome.result.status == SolveStatus.PROVEN_INFEASIBLE
 
 
@@ -165,13 +167,16 @@ class TestStatusSemantics:
 
     def test_short_budget_is_not_infeasible(self):
         # 红线：超时 ≠ 证明无解。Solomon 派生草稿（15 旧 + 3 新），
-        # 10ms 预算内基本不可能解出，状态必须是 no_feasible_found。
+        # 10ms 预算内 COPT 不可能解出，状态必须是 no_feasible_found。
+        # 2026-10-11 决策：rebuild 默认 OR-Tools 对 18 节点秒回可行解，
+        # 无法触发超时路径，故显式用 COPT 小预算（无 COPT 环境跳过）。
+        pytest.importorskip("coptpy")
         data = json.loads(DRAFT_FILE.read_text(encoding="utf-8"))
         draft = ScenarioDraft(**data["draft"])
         scn = materialize_scenario(
             draft, lock_ratio=float(data["_meta"].get("lock_ratio_target") or 0.0),
             lock_seed=int(data["_meta"].get("seed") or 0), time_limit_ms=20000)
-        outcome = solve(scn, "rebuild", time_limit_ms=10)
+        outcome = solve(scn, "rebuild", time_limit_ms=10, backend="copt")
         assert outcome.result.status == SolveStatus.NO_FEASIBLE_FOUND
         assert outcome.result.status != SolveStatus.PROVEN_INFEASIBLE
         assert outcome.result.metrics.get("solver_status") != "MIP_INFEASIBLE"

@@ -1,7 +1,9 @@
 """完全重排基线（任务书阶段 2）：对全部任务重新求解。
 
-后端（队长决策）：COPT 8.0.6 MIP（src/solver/copt_core.py）。
-OR-Tools CP 版（ortools_core）保留作对照/阶段 3 候选生成。
+后端（2026-10-11 队长决策）：**默认 OR-Tools CP**（无许可依赖，交付可跑）；
+COPT 8.0.6 MIP 为可选后端（小规模最优性/不可行性验证）。
+后端必须显式出现在每条结果中，禁止静默回退（无 COPT 许可时显式
+选 copt 报可理解错误）。
 - 尊重锁定（换车锁、相对顺序锁）；旧任务不预设保留原顺序。
 - 返回原始状态 + 路线；是否可行由调用方用独立校验器复核，
   本模块不对结果做可行性断言。
@@ -12,7 +14,7 @@ from ..domain.models import RouteResult, Scenario
 from ..validation.timetable import evaluate_route
 from .ortools_core import OrtoolsOutcome
 
-BACKEND = "copt"
+BACKEND = "ortools"
 
 
 def rebuild_all(

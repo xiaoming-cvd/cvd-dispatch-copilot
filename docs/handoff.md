@@ -184,23 +184,52 @@ cd C:\Users\tianj\Desktop\城配调度副驾
 
 1. COPT 求解日志已关闭（Logging=0）；诊断时可在调用层打开。
 2. `travel_seconds()` 冗余函数未清理（无害）；`build_travel_matrix` 中未使用变量 `idx`。
-3. Git 仓库仍未初始化（等队长指示）。
+3. Git 仓库已按 2026-10-11 决策本地初始化并提交（**仅本地，未上传远端、未邀请协作者**；
+   `.gitignore` 排除 .env、许可文件、原始受限数据、venv 与缓存；`.env` 已核实未入库）。
+   私有远端与协作者留待队长确认。
 4. 阶段 4：真实模型输出不确定（冒烟 5 例合规，但非覆盖率测试）；生产使用须人工复核草案。
    DeepSeek 模型名以接口返回为准（`deepseek-flash`/`deepseek-v4-pro`），`.env` 的
    `LLM_MODEL` 需按实际可用名填写。
 5. 阶段 4：偏好项（如"尽量不换车"）已随确认包保存，但接线到求解配置是阶段 5/6 的工作；
    mock 词表仅覆盖任务书锁定语义内的小型中文需求，未覆盖句式一律澄清问题（不猜测）。
 
-## 下一阶段所需输入
+## 阶段 5 完成状态（2026-10-11，待队长验收）
 
-- 阶段 5（后端网页与导出）：FastAPI 端点（scenarios / baseline / constraints draft+confirm /
-  solve+jobs / export）、限量任务队列、前端页面、CSV 导出。阶段 4 服务层接口
-  （`LLMService.create_draft/confirm`、`DraftStore`）已按"阶段 5 薄包装"设计，
-  端点可直接复用；求解侧接口沿用 `src/solver/pipeline.py` + `scripts/solve_cli.py`。
-  注意阶段 5 需处理：草案确认与求解的版本冲突语义、关闭 AI（演示模式）仍可操作、
-  CSV 公式/HTML 注入防护。
+- **已交付**：FastAPI 后端（`src/api/`：app/jobs/routes，端点 health、scenarios
+  列表/详情/上传、template、baseline、constraints draft/get/confirm、solve、
+  jobs 列表/详情/result.json/export.csv、history）；单文件前端
+  （`frontend/index.html`，无构建步骤，全 textContent 渲染防 HTML 注入）；
+  启动脚本 `scripts/serve.py`；端到端测试 `tests/test_api_stage5.py`（34 条）。
+- **测试**：全量 313 passed（含 4 条按 Q2/Q3 决策更新的旧断言：默认后端切换
+  后，证明不可行/超时语义测试显式指定 `backend="copt"`）。
+- **口径落地（2026-10-11 决策）**：
+  - 三方法统一 60 秒端到端预算（`Settings.default_budget_ms=60000`，端点层封顶）；
+  - rebuild 默认 OR-Tools（`src/solver/rebuild.py BACKEND="ortools"`），每条结果
+    含 method/backend/backend_requested/预算/耗时/状态/has_solution；
+  - COPT 超时 = TIMEOUT_NO_SOLUTION（≠不可行）；OR-Tools 可行 ≠ 证明最优；
+    无许可而显式选 copt → ERROR + 可理解警告，绝不静默回退；
+  - 未过独立校验禁止导出（403 E_EXPORT_FORBIDDEN）；
+  - 草案确认必须显式（accept_all 或逐项 decisions，默认不勾）；
+  - 队列：单工作进程、限排队 8、任务落盘、重启 interrupted。
+- **修复的真实缺陷**（实施中发现）：模块级共享 `APIRouter` 导致多实例闭包
+  串队列（任务提交到已停止队列永远 queued）——router 改为 attach() 内创建；
+  OR-Tools 结果缺 backend 标注；history 端点对 baseline 结果行 KeyError。
+- **数据边界**：Solomon 仅来源链接+处理脚本（`scripts/download_solomon.py`）；
+  Kilby（CC BY 4.0）已入库含署名与修改说明，提交前再核对数据页；
+  Amazon 原始数据不入库（`docs/amazon_field_mapping.md` + 合成样例）。
+- 演示模式可全流程操作（mock LLM 明确标注，不冒充真实模型）。
 
-## 待决定事项
+## 下一阶段所需输入（阶段 6 冻结评测）
 
-- 是否初始化 Git 仓库；
-- COPT 作为默认后端是否写进交付 README（涉及比赛环境是否有 COPT 许可——若没有，评测机需回退 OR-Tools 后端，属交付时必须交代的限制）。
+- 评测机环境确认：无 COPT 许可也可跑（rebuild 默认 OR-Tools）；COPT 仅用于
+  小规模最优性/不可行性验证与 300 秒诊断实验（单独成表，不混入主比较）。
+- LLM_MODEL 交付前按目标接口复验（当前实测 `deepseek-flash`；不写不存在的
+  DeepSeek-V4.1-Flash）。
+- 阶段 6 分别报告 COPT 与 OR-Tools 结果；不隐藏无解、不混算不同预算或后端。
+
+## 已决事项（2026-10-11 队长决策）
+
+- Git：本地初始化并提交，暂不上传远端/邀请协作者（已执行）；
+- 默认后端：交付默认 OR-Tools，COPT 可选；README 写明安装/许可/无许可行为；
+- 数据许可：按上文数据边界执行；Amazon 原始数据不入库；
+- 预算口径：正式评测三方法均限 60 秒端到端；300 秒 COPT 诊断单独成表。
