@@ -4,9 +4,17 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+import pytest
+
 from src.adapters.solomon import build_travel_matrix, load_instance, parse_solomon
 
 RAW = Path(__file__).resolve().parent.parent / "data" / "raw" / "solomon"
+
+# 三次复审 P0：缺原始数据时整模块显式 skip（读取均在测试函数内，收集安全）。
+pytestmark = pytest.mark.skipif(
+    not (RAW / "C101.txt").is_file(),
+    reason="缺 Solomon 原始数据（data/raw/solomon）："
+           "scripts/download_solomon.py 获取后重跑")
 
 
 class TestParse:

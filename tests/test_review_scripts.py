@@ -68,6 +68,8 @@ class TestFingerprintMissingSource:
     def _tmp_raw(self, tmp_path):
         """把 11 个真实源文件复制到临时目录（不动开发机原件）。"""
         src = ROOT / "data" / "raw" / "solomon"
+        if not (src / "C101.txt").is_file():
+            pytest.skip("缺 Solomon 原始数据：scripts/download_solomon.py 获取后重跑")
         dst = tmp_path / "raw"
         dst.mkdir()
         for f in src.glob("*.txt"):

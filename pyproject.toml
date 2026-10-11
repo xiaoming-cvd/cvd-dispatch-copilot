@@ -7,3 +7,6 @@ requires-python = ">=3.12"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
+markers = [
+    "delivery_sim: 交付包空目录模拟回归（慢，约 1-3 分钟；单独跑：pytest -m delivery_sim）",
+]

@@ -11,8 +11,20 @@
 （依次：全量测试；审查模式（有 COPT，含显式 rebuild copt 冒烟与后端校验）；
 无 COPT 模式（rebuild 默认 OR-Tools 冒烟仍会运行）。两种模式退出码 0 才为
 全量 pass；任一环节显式跳过（退出码 2）时 overall 显示 partial 而非 pass。
-当前基线（2026-10-11 二次复审后）：开发机 354 passed；无 COPT 干净环境
-348 passed + 6 skipped。）
+当前基线（2026-10-11 三次复审后）：开发机 `-m "not delivery_sim"` 354 passed；
+无 COPT 干净环境 348 passed + 6 skipped；交付模拟 `delivery_sim` 1 passed。）
+
+数据前置条件与两种运行模式（无原件 / 原件齐全）见 README「数据恢复」节：
+缺原件时源数据用例显式 skip、review_check 为 partial，均不视为失败。
+
+```bat
+.venv\Scripts\python.exe -m pytest -m delivery_sim -q
+.venv\Scripts\python.exe scripts\verify_empty_dir.py
+```
+
+（交付包空目录无原件模拟回归：白名单打包 → 解压到无 data/raw 目录 →
+pytest 收集无错误且源数据用例 skip → review_check 基础通过且 overall=partial。
+约 1-3 分钟，日志 reports/verify_empty_dir_log.txt。）
 
 ```bat
 .venv\Scripts\python.exe scripts\build_delivery_zip.py

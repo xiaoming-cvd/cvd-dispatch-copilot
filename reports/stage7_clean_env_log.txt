@@ -12,3 +12,12 @@ cleanenv overall: pass | skip_copt: True
 pytest: ['================ 348 passed, 6 skipped, 158 warnings in 6.44s =================']
 smoke: {'insert': 0, 'low_disruption': 0, 'rebuild_ortools': 0, 'rebuild_ortools_backend': 0}
 coptpy: MISSING(optional)
+
+=== Web/CLI 原始冒烟（三次复审补充，2026-10-11 19:16）===
+--- CLI: solve_cli low_disruption ---
+CLI_EXIT=0
+CLI status: feasible | independent_ok: True
+--- Web: serve.py + curl ---
+GET / -> 200
+GET /api/scenarios -> 200
+SERVE_STOPPED

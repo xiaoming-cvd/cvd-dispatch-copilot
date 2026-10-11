@@ -33,6 +33,7 @@ DEFAULT_OUT_DIR = Path(r"C:\Users\tianj\Desktop\阶段审查包")
 # ---------- 白名单 ----------
 ROOT_FILES = [
     "README.md", "requirements.txt", ".env.example", ".gitignore",
+    "pyproject.toml",
     "城配调度副驾.bundle",
 ]
 DIRS = [
@@ -55,6 +56,7 @@ REPORTS_FILES = [
     "reports/stage7_cleanenv_skip_summary.json",
     "reports/stage7_clean_env_log.txt",
     "reports/stage7_cmd_smoke.json",
+    "reports/verify_empty_dir_log.txt",
 ]
 
 # 高置信敏感模式：命中即拒绝打包（允许文档中出现 "api_key" 等单词，

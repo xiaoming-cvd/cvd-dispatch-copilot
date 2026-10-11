@@ -7,7 +7,9 @@
 1. 依赖检查（pydantic/pytest/ortools 必需；COPT 可选，--skip-copt 时跳过）
 2. manifest 与 registry 登记一致性（哈希、split、文件存在性）
 3. 基础算例内容指纹（调用 check_base_fingerprint 的逻辑结果）
-4. 全量 pytest
+3b. 源数据在位检查（缺 Solomon/Kilby 原件 → 退出码 2 → overall partial，
+    stdout 附缺失清单与获取方式）
+4. 全量 pytest（不含 delivery_sim 交付模拟用例）
 5. 小样本 smoke（insert / rebuild / low_disruption；rebuild 始终验证默认
    OR-Tools 后端，有 COPT 时另跑显式 --backend copt 并校验结果中的后端）
 6. 审查反例回归（R01/R02 穷举核对 + P0 校验反例）
@@ -121,8 +123,12 @@ def main() -> int:
     # 3. 指纹检查
     summary["steps"]["fingerprint"] = run([PY, "scripts/check_base_fingerprint.py"])
 
-    # 4. 全量测试
-    summary["steps"]["pytest"] = run([PY, "-m", "pytest", "-q"])
+    # 3b. 源数据在位检查（缺原件 → 退出码 2 → overall partial，附获取方式）
+    summary["steps"]["source_data"] = run([PY, "scripts/check_source_data.py"])
+
+    # 4. 全量测试（不含 delivery_sim 交付模拟，避免套娃；该用例单独跑）
+    summary["steps"]["pytest"] = run(
+        [PY, "-m", "pytest", "-q", "-m", "not delivery_sim"])
 
     # 5. 小样本 smoke
     # rebuild 默认 OR-Tools 冒烟在两种模式下都必须跑（审查 P0-1：--skip-copt

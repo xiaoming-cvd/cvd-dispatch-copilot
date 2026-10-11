@@ -17,8 +17,11 @@
 - [x] README 区分已实现 / 模拟 / 尚未实现；Mock 模型、合成新增事件、
       估算成本（模型行驶秒）均已标清。
 - [x] 干净环境验证完成并记日志：`reports/stage7_clean_env_log.txt`
-      （2026-10-11 二次复审复验：348 passed + 6 skipped，COPT 用例跳过，
-      Web 冒烟 200，CLI 闭环退出码 0）。
+      （2026-10-11 三次复审复验：348 passed + 6 skipped；CLI 冒烟退出码 0、
+      status=feasible、independent_ok=True；Web `GET /` 与 `/api/scenarios`
+      均 200，serve.py 已停止——以上均带命令与时间记在日志内。
+      注意"干净环境"=同机新 venv，仍共用开发机 data/raw，非净目录跨机复现；
+      跨机开箱行为以 `pytest -m delivery_sim` 空目录回归为准）。
 - [ ] 总工验收"冻结评测完成"（阶段 6 二次复审：有条件通过，
       待申请最终验收）。
 - [ ] 队长确认后创建私有远端并推送（本清单不自动建仓/邀请协作者）。

@@ -8,7 +8,19 @@
 > `scripts/review_check.py` 实跑结果为准。提交历史可用包内
 > `城配调度副驾.bundle`（git bundle）完整核验。
 
-## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）· 阶段 7 ✅ 交付包二次复审修复完成（待终审）（2026-10-11）
+## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）· 阶段 7 ✅ 交付包三次复审修复完成（待终审）（2026-10-11）
+
+> **阶段 7 三次复审（2026-10-11）**：P0 测试原件依赖全部改为显式 skip
+> （test_generator 模块级读取下移为惰性加载，test_solomon / test_kilby
+> TestRealZip / test_amazon TestRawIntegrity / test_layout_split /
+> test_review_scripts 加 skipif 守卫，缺原件不再收集崩溃）；新增
+> `scripts/check_source_data.py`（review_check 第 3b 步，缺件列清单与获取
+> 方式，退出码 2 → partial）；新增空目录无原件自动化回归
+> （`scripts/verify_empty_dir.py` + `pytest -m delivery_sim`，模拟
+> PASS，日志 reports/verify_empty_dir_log.txt）。P1 README/testing 补
+> 「数据恢复」节（Solomon 下载脚本、Kilby 来源/许可/放置路径、两种模式
+> 命令与预期 pass/skip/partial）；干净环境日志补齐 Web 200 与 CLI 退出码
+> 原始记录，并声明"干净环境=同机新 venv 共用 data/raw"。
 
 > **阶段 7 二次复审（2026-10-11）**：P0 后端断言改严格相等（实际+请求后端
 > 均须匹配期望，solver_version 仅作附加校验，失败保留结果 JSON，含反例单测）；

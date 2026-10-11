@@ -1,0 +1,77 @@
+=== verify_empty_dir（交付包空目录无原件模拟）2026-10-11 19:17:01 ===
+$ C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe scripts/build_delivery_zip.py --out C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\delivery.zip  (cwd=C:\Users\tianj\Desktop\城配调度副驾, 0.9s)
+exit=0
+--- stdout tail ---
+打包 226 个文件 -> C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\delivery.zip
+manifest 自核通过；sha256 4412b0fc49828fb2506d0665295e62f5aa2ff32c7a6a926d237dee6f722c3dda
+size 8353000 bytes
+
+--- stderr tail ---
+
+
+已解压交付 ZIP 到空目录（data/raw 为空，等同未恢复原件的接收机）
+$ C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe -m pytest -m not delivery_sim -q tests  (cwd=C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\extracted, 8.0s)
+exit=0
+--- stdout tail ---
+nings
+  C:\Users\tianj\Desktop\城配调度副驾\.venv\Lib\site-packages\fastapi\applications.py:4745: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/test_api_stage5.py: 37 warnings
+  C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\extracted\src\api\app.py:280: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/test_api_stage5.py::test_no_feasible_recorded_honestly
+tests/test_api_stage5.py::test_export_rejects_timeout_no_solution
+tests/test_api_stage5.py::test_export_rejects_proven_infeasible
+  C:\Users\tianj\Desktop\城配调度副驾\.venv\Lib\site-packages\pydantic\main.py:520: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `tuple[RouteResult, ...]` - serialized value may not be as expected [field_name='routes', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[StopSchedule, ...]` - serialized value may not be as expected [field_name='schedule', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='warnings', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='assumptions', input_value=[], input_type=list])
+    return self.__pydantic_serializer__.to_python(
+
+tests/test_api_stage5.py::test_export_forbidden_when_validation_fails
+tests/test_api_stage5.py::test_export_rejects_hash_mismatch
+  C:\Users\tianj\Desktop\城配调度副驾\.venv\Lib\site-packages\pydantic\main.py:520: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `tuple[RouteResult, ...]` - serialized value may not be as expected [field_name='routes', input_value=[{'vehicle_id': 'V1', 'order_ids': ['o1']}], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[StopSchedule, ...]` - serialized value may not be as expected [field_name='schedule', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='warnings', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='assumptions', input_value=[], input_type=list])
+    return self.__pydantic_serializer__.to_python(
+
+tests/test_api_stage5.py::test_version_drift_fails_honestly
+  C:\Users\tianj\Desktop\城配调度副驾\.venv\Lib\site-packages\pydantic\main.py:520: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `tuple[RouteResult, ...]` - serialized value may not be as expected [field_name='routes', input_value=[{'vehicle_id': 'V1', 'or...s': ['o1', 'o2', 'o3']}], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[StopSchedule, ...]` - serialized value may not be as expected [field_name='schedule', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='warnings', input_value=[], input_type=list])
+    PydanticSerializationUnexpectedValue(Expected `tuple[str, ...]` - serialized value may not be as expected [field_name='assumptions', input_value=[], input_type=list])
+    return self.__pydantic_serializer__.to_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========= 327 passed, 27 skipped, 1 deselected, 158 warnings in 7.36s =========
+
+--- stderr tail ---
+
+
+$ C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe scripts/review_check.py --skip-copt  (cwd=C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\extracted, 9.5s)
+exit=1
+--- stdout tail ---
+review_summary -> C:\Users\tianj\AppData\Local\Temp\cvd_empty_idfn76hu\extracted\reports\review_summary.json
+overall: partial: 以下步骤显式跳过/无源，未完全验证 C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe scripts/check_base_fingerprint.py; C:\Users\tianj\Desktop\城配调度副驾\.venv\Scripts\python.exe scripts/check_source_data.py
+
+--- stderr tail ---
+
+
+
+结论: PASS（空目录无原件可收集、基础审查通过、总状态 partial）

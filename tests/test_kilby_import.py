@@ -1,7 +1,8 @@
 """Kilby 动态 VRP 适配与导入测试（阶段 5 补充基准）。
 
-自包含单元测试用合成 VRPTEST 文本；集成测试用 data/raw/kilby 原始 zip
-（与 tests/test_solomon.py 同约定：原始文件是项目数据资产，缺失即报错）。
+自包含单元测试用合成 VRPTEST 文本；集成测试用 data/raw/kilby 原始 zip。
+三次复审 P0 修正：原始 zip 缺失时集成类显式 skip（不得收集失败）；
+恢复方式见 README「数据恢复」节（来源 Mendeley DOI 10.17632/3fwc3twwn6.1）。
 """
 from __future__ import annotations
 
@@ -9,6 +10,8 @@ import json
 import math
 import zipfile
 from pathlib import Path
+
+import pytest
 
 from src.adapters.kilby import (
     CUTOFF_DEFAULT,
@@ -177,6 +180,10 @@ class TestDraftBuild:
         assert a == b
 
 
+@pytest.mark.skipif(
+    not RAW_ZIP.is_file(),
+    reason="缺 Kilby 原始数据（data/raw/kilby/3fwc3twwn6.zip，"
+           "Mendeley DOI 10.17632/3fwc3twwn6.1）：恢复步骤见 README「数据恢复」节")
 class TestRealZip:
     @classmethod
     def _instances(cls):

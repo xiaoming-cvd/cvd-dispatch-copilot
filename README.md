@@ -46,6 +46,50 @@ py -3.12 -m venv .venv
 > 注：`ortools` 锁定于 9.14.6206（Python 3.12 兼容），阶段 2 才使用；
 > 若网络较慢可届时再装，阶段 0 测试不依赖它。
 
+## 数据恢复（先读我：交付包不含受限原始数据）
+
+交付包/仓库**不含** `data/raw/` 原始数据（许可边界，`.gitignore` 排除）。
+两种使用模式，按需要选择：
+
+**模式 A · 仅演示/基础审查（无需原始数据）**
+
+```bat
+.venv\Scripts\python.exe -m pytest -q -m "not delivery_sim"
+.venv\Scripts\python.exe scripts\review_check.py --skip-copt
+.venv\Scripts\python.exe -m pytest -m delivery_sim -q
+```
+
+预期：pytest 全过、源数据用例**显式 skip**（约 26 条，含原因与获取方式）；
+review_check 基础 smoke 全通过、overall=**partial**（退出码 1，因
+fingerprint/source_data 退出码 2）；第三条为交付包空目录无原件自动化回归，
+输出 `PASS`（详见 `reports/verify_empty_dir_log.txt`）。
+
+**模式 B · 完整原始数据复核（先恢复原件）**
+
+```bat
+.venv\Scripts\python.exe scripts\download_solomon.py
+.venv\Scripts\python.exe scripts\check_base_fingerprint.py
+.venv\Scripts\python.exe -m pytest -q -m "not delivery_sim"
+.venv\Scripts\python.exe scripts\review_check.py
+```
+
+预期：Solomon 11 个文件字节 sha256 与 `data/manifests/solomon_manifest.json`
+登记一致（manifest 一致性 11/11）；pytest **354 passed, 0 skipped**；
+review_check overall=**pass**（退出码 0；有 COPT 时另验证 rebuild copt 冒烟
+与穷举核对）。
+
+原始数据获取与放置：
+
+| 数据 | 放置路径 | 获取 | 许可 |
+|---|---|---|---|
+| Solomon 100-customers（11 个算例） | `data/raw/solomon/` | `scripts/download_solomon.py`（登记来源见 solomon_manifest.json） | 学术基准惯常公开用于研究，**未见明示许可文本，商用/比赛再分发前须自行核对**（manifest 标注"待确认"） |
+| Kilby 动态 VRP | `data/raw/kilby/3fwc3twwn6.zip` | Mendeley Data，DOI `10.17632/3fwc3twwn6.1`，文件名/sha256 见 `data/manifests/kilby_manifest.json` | CC BY 4.0（须署名，详见 docs/data_licenses.md） |
+| Amazon last-mile | 不入库 | 仅字段映射 + 合成样例（`data/sample/`） | CC BY-NC 4.0，原始数据不进仓库 |
+
+"干净环境"说明：交付日志中的干净环境复验是**同机新 venv**，仍共用开发机
+`data/raw`，不是净目录跨电脑复现；跨电脑开箱行为以模式 A 的
+`delivery_sim` 回归为准。
+
 ## 阶段 5：Web 工作台（启动）
 
 ```bat

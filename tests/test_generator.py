@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
 
 from src.adapters.generator import (
     GenConfig,
@@ -14,28 +17,39 @@ from src.validation.checks import validate_draft
 
 TZ = timezone(timedelta(hours=8))
 T0 = datetime(2026, 10, 10, 8, 0, 0, tzinfo=TZ)
-RAW = __import__("pathlib").Path(__file__).resolve().parent.parent / "data" / "raw" / "solomon"
+RAW = Path(__file__).resolve().parent.parent / "data" / "raw" / "solomon"
 
-INST = load_instance(RAW / "C101.txt")
+# 三次复审 P0：缺原始数据时显式 skip，不得在收集阶段崩溃。
+pytestmark = pytest.mark.skipif(
+    not (RAW / "C101.txt").is_file(),
+    reason="缺 Solomon 原始数据（data/raw/solomon）："
+           "scripts/download_solomon.py 获取后重跑")
+
+
+def _inst():
+    """惰性加载 C101（模块级读取会在无原件环境导致收集失败）。"""
+    return load_instance(RAW / "C101.txt")
+
+
 CFG = GenConfig(n_known=15, n_new=3, tw_tightness="normal", vehicle_slack="normal",
                 lock_ratio=0.2, seed=101)
 
 
 class TestReproducibility:
     def test_same_seed_identical(self):
-        a = generate_draft(INST, CFG, "x", T0)
-        b = generate_draft(INST, CFG, "x", T0)
+        a = generate_draft(_inst(), CFG, "x", T0)
+        b = generate_draft(_inst(), CFG, "x", T0)
         assert input_hash(a.draft) == input_hash(b.draft)
         assert a.event_log == b.event_log
 
     def test_different_seed_differs(self):
         c2 = GenConfig(**{**CFG.__dict__, "seed": 999})
-        a = generate_draft(INST, CFG, "x", T0)
-        b = generate_draft(INST, c2, "x", T0)
+        a = generate_draft(_inst(), CFG, "x", T0)
+        b = generate_draft(_inst(), c2, "x", T0)
         assert input_hash(a.draft) != input_hash(b.draft)
 
     def test_event_log_tracks_selection(self):
-        gen = generate_draft(INST, CFG, "x", T0)
+        gen = generate_draft(_inst(), CFG, "x", T0)
         ev = gen.event_log[0]
         assert len(ev["known"]) == 15 and len(ev["new"]) == 3
         assert not (set(ev["known"]) & set(ev["new"]))
@@ -44,11 +58,11 @@ class TestReproducibility:
 
 class TestDraftValidity:
     def test_draft_passes_validation(self):
-        gen = generate_draft(INST, CFG, "x", T0)
+        gen = generate_draft(_inst(), CFG, "x", T0)
         assert validate_draft(gen.draft).ok
 
     def test_new_orders_flagged(self):
-        gen = generate_draft(INST, CFG, "x", T0)
+        gen = generate_draft(_inst(), CFG, "x", T0)
         new_ids = {o.order_id for o in gen.draft.orders if o.is_new}
         assert len(new_ids) == 3
 
@@ -88,7 +102,7 @@ class TestDraftValidity:
 
     def test_time_conversion(self):
         """原始窗值 × 60 进入 schema（C101 客户1 窗 [912,967] -> [54720,58020]）。"""
-        gen = generate_draft(INST, GenConfig(n_known=15, n_new=0, seed=101), "x", T0)
+        gen = generate_draft(_inst(), GenConfig(n_known=15, n_new=0, seed=101), "x", T0)
         by_id = {o.order_id: o for o in gen.draft.orders}
         if "o1" in by_id:
             assert by_id["o1"].ready_s == 912 * 60

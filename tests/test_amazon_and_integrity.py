@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from src.adapters.amazon import DEFAULT_HORIZON_S, parse_route
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +46,10 @@ class TestAmazonParse:
         assert "合成" in meta["note"]
 
 
+@pytest.mark.skipif(
+    not (RAW / "C101.txt").is_file(),
+    reason="缺 Solomon 原始数据（data/raw/solomon）："
+           "scripts/download_solomon.py 获取后重跑")
 class TestRawIntegrity:
     def test_raw_files_match_manifest(self):
         """原始文件下载后未被修改（与 manifest 哈希一致）。"""
