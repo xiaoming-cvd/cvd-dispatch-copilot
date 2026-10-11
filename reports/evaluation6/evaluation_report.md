@@ -1,6 +1,6 @@
 # 阶段 6 评测报告（60 秒软预算版）
 
-- 生成时间：2026-10-11T15:22:58
+- 生成时间：2026-10-11T16:05:53
 - 冻结清单：`frozen_manifest.json`（开跑前写入，含划分/种子/配置/预算）
 - 原始结果：`raw/*.json`（每场景输入哈希/状态/指标/异常/分项耗时）+ `summary.csv`
 - **样本口径（修正）**：清单共 39 场景 = dev 23 + test 16，
@@ -33,6 +33,52 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 | r201-s102 | dev | 17 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
 | rc101-s201 | test | 18 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms 内未找到覆盖全部旧任务的原计划（ROUTING_FAIL，禁止把超时写成无解；可加大预算重试） |
 
+**manifest 对账表（全部 39 个冻结 ID）**：物化状态 / 失败原因 / 草稿哈希 /
+是否进入主评测 / 三方法状态，逐行可核；完整版（含完整 SHA-256 与输入哈希）
+见同目录 `reconciliation.csv`：
+
+| 场景 | 组 | 来源 | 单 | TW | 锁 | 种子 | 草稿哈希 | 物化 | 失败原因 | 主评测 | insert | rebuild | LD |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| c101-s101 | dev | C101 | 18 | normal | 0.2 | 101 | 5b0983b577fa | OK(14ms) |  | 是 | 可行 | 可行 | 可行 |
+| c101-s102 | dev | C101 | 17 | tight | 0.5 | 102 | b9c284f612ef | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| c102-s101 | dev | C102 | 18 | normal | 0.2 | 101 | 2f47c01bf63b | OK(0ms) |  | 是 | 可行 | 可行 | 可行 |
+| c102-s102 | dev | C102 | 17 | tight | 0.5 | 102 | 20c3200d6a85 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| c201-s201 | test | C201 | 18 | normal | 0.2 | 201 | 75f05516fd1a | OK(16ms) |  | 是 | 可行 | 预算内未找到解(≠不可行) | 可行 |
+| c202-s201 | test | C202 | 18 | normal | 0.2 | 201 | 01020a7aea59 | OK(0ms) |  | 是 | 可行 | 可行 | 可行 |
+| r101-s101 | dev | R101 | 18 | normal | 0.2 | 101 | e26f6f2a7215 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| r101-s102 | dev | R101 | 17 | tight | 0.5 | 102 | 0749fbe75a36 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| r102-s101 | dev | R102 | 18 | normal | 0.2 | 101 | f958f84f6d40 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| r102-s102 | dev | R102 | 17 | tight | 0.5 | 102 | f051ce64e989 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| r201-s101 | dev | R201 | 18 | normal | 0.2 | 101 | c082d2047e68 | OK(0ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| r201-s102 | dev | R201 | 17 | tight | 0.5 | 102 | 819187bcbb35 | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| r202-s101 | dev | R202 | 18 | normal | 0.2 | 101 | 73bf07cb2964 | OK(0ms) |  | 是 | 可行 | 可行 | 可行 |
+| r202-s102 | dev | R202 | 17 | tight | 0.5 | 102 | da4fb6d4e853 | OK(250ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) |
+| rc101-s201 | test | RC101 | 18 | normal | 0.2 | 201 | 0202efee119e | 物化失败 | ValueError: E_PLAN_NOT_FOUND: 预算 20000ms | 否 | — | — | — |
+| rc201-s201 | test | RC201 | 18 | normal | 0.2 | 201 | 49644c88287b | OK(0ms) |  | 是 | 可行 | 可行 | 可行 |
+| rc202-s201 | test | RC202 | 18 | normal | 0.2 | 201 | f2b2cef27a2b | OK(0ms) |  | 是 | 可行 | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai385-s201 | test | kilby-tai385 | 385 | — | 0.2 | 201 | 6cd07d6d18d2 | OK(62ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c100-s101 | dev | kilby-c100 | 100 | — | 0.3 | 101 | 247732bfbba8 | OK(31ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c100b-s101 | dev | kilby-c100b | 100 | — | 0.3 | 101 | 6425c6624cd7 | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c120-s101 | dev | kilby-c120 | 120 | — | 0.3 | 101 | f3c10bf05e98 | OK(46ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c150-s101 | dev | kilby-c150 | 150 | — | 0.3 | 101 | b3eea9a99fed | OK(30ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c199-s201 | test | kilby-c199 | 199 | — | 0.2 | 201 | e98b7df081ae | OK(32ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c50-s201 | test | kilby-c50 | 50 | — | 0.2 | 201 | fd8f91532a8e | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-c75-s201 | test | kilby-c75 | 75 | — | 0.2 | 201 | 104322f18cb2 | OK(31ms) |  | 是 | 预算内未找到解(≠不可行) | 可行 | 可行 |
+| kilby-f134-s101 | dev | kilby-f134 | 134 | — | 0.3 | 101 | b3e5df1e9a4e | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-f71-s201 | test | kilby-f71 | 71 | — | 0.2 | 201 | 6d2345aa2b67 | OK(14ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai100a-s101 | dev | kilby-tai100a | 100 | — | 0.3 | 101 | 0a4bf146b569 | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai100b-s201 | test | kilby-tai100b | 100 | — | 0.2 | 201 | 3a8b9b0fb6fb | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai100c-s101 | dev | kilby-tai100c | 100 | — | 0.3 | 101 | 48c143f6ca98 | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai100d-s101 | dev | kilby-tai100d | 100 | — | 0.3 | 101 | ed5ed003f3d5 | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai150a-s201 | test | kilby-tai150a | 150 | — | 0.2 | 201 | 0b6f23da0530 | OK(16ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai150b-s101 | dev | kilby-tai150b | 150 | — | 0.3 | 101 | 72d4ea4d463e | OK(31ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai150c-s201 | test | kilby-tai150c | 150 | — | 0.2 | 201 | ed5ac7a138df | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai150d-s101 | dev | kilby-tai150d | 150 | — | 0.3 | 101 | 863b896ee23a | OK(30ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai75a-s201 | test | kilby-tai75a | 75 | — | 0.2 | 201 | 3d7635859a46 | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 可行 | 可行 |
+| kilby-tai75b-s101 | dev | kilby-tai75b | 75 | — | 0.3 | 101 | a02fc24629a3 | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai75c-s201 | test | kilby-tai75c | 75 | — | 0.2 | 201 | 9807d2bc8775 | OK(30ms) |  | 是 | 预算内未找到解(≠不可行) | 预算内未找到解(≠不可行) | 可行 |
+| kilby-tai75d-s201 | test | kilby-tai75d | 75 | — | 0.2 | 201 | f59e188fc251 | OK(15ms) |  | 是 | 预算内未找到解(≠不可行) | 可行 | 可行 |
+
 ## 一、测试集（冻结配置，test，n=16，其中物化失败 1 个）
 
 | 场景 | 订单数 | insert(状态/成本s/耗时ms) | rebuild OR-Tools | low_disruption(cap1.10) | 端到端ms |
@@ -54,12 +100,12 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 | rc201-s201 | 18 | 可行 / 51464s / 0ms | 可行 / 52776s / 0ms | 可行 / 51464s / 733ms | 733 |
 | rc202-s201 | 18 | 可行 / 47502s / 0ms | 预算内未找到解(≠不可行) / —s / 0ms | 可行 / 47502s / 389ms | 389 |
 
-**可行率**（分母 = 物化成功样本；物化超时单独列出，不偷偷剔除）：
-| 方法 | 可行样本/分母 |
-|---|---|
-| insert | 4/15（27%） |
-| rebuild OR-Tools | 5/15（33%） |
-| low_disruption(1.10) | 15/15（100%） |
+**可行率（双口径并报，不得混用）**：
+| 方法 | 冻结集口径(分母16) | 可物化子集口径(分母15) |
+|---|---|---|
+| insert | 4/16（25%） | 4/15（27%） |
+| rebuild OR-Tools | 5/16（31%） | 5/15（33%） |
+| low_disruption(1.10) | 15/16（94%） | 15/15（100%） |
 
 **失败分布**：{'insert:feasible': 4, 'rebuild:no_feasible_found': 10, 'low_disruption:feasible': 15, 'rebuild:feasible': 5, 'insert:no_feasible_found': 11, '原计划物化超时(≠无解)': 1}
 
@@ -91,7 +137,7 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 | r202-s101 | 18 | 可行 / 37050s / 0ms | 可行 / 40180s / 0ms | 可行 / 37050s / 280ms | 4671 |
 | r202-s102 | 17 | 预算内未找到解(≠不可行) / —s / 0ms | 预算内未找到解(≠不可行) / —s / 3687ms | 预算内未找到解(≠不可行) / —s / 30ms | 29125 |
 
-**可行率**：insert 3/16（19%）；rebuild OR-Tools 3/16（19%）；low_disruption 15/16（94%）
+**可行率（双口径）**：insert 冻结集 3/23（13%） / 可物化 3/16（19%）；rebuild OR-Tools 冻结集 3/23（13%） / 可物化 3/16（19%）；low_disruption 冻结集 15/23（65%） / 可物化 15/16（94%）
 **失败分布**：{'insert:feasible': 3, 'rebuild:feasible': 3, 'low_disruption:feasible': 15, '原计划物化超时(≠无解)': 7, 'insert:no_feasible_found': 13, 'rebuild:no_feasible_found': 13, 'low_disruption:no_feasible_found': 1}
 
 ## 三、配对比较（注明样本占比，单位：模型行驶秒）
@@ -99,6 +145,20 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 - low_disruption vs insert：两方法均可行的配对样本 4/15（占比 27%）——成本更低 0、更高 0、持平 4（单位：模型行驶秒）
 - low_disruption vs rebuild：两方法均可行的配对样本 5/15（占比 33%）——成本更低 5、更高 0、持平 0（单位：模型行驶秒）
 - rebuild vs insert：两方法均可行的配对样本 2/15（占比 13%）——成本更低 0、更高 2、持平 0（单位：模型行驶秒）
+
+配对样本少（如 insert×rebuild 仅 5 个），成本优势结论仅限该配对子集，
+不得推断总体节约；`chart_cost_diff.png` 为配对成本差可视化。
+
+## 三·补、成本上限逐行核验（P1）
+
+低扰动全部 60 个已求解行逐行核验
+`selected_cost ≤ allowed_cost(=cap_ratio × reference_best_cost)`：
+**违规 0 行**；未超上限 54 行；
+超上限但已如实标注 `within_reference_cap=false`（no_candidate_within_cost_cap）
+6 行；数据不足 0 行。
+逐行明细见 summary.csv 的 allowed_cost_s / within_cap 列。
+注意：reference_best 来自跨方法已验证方案；其缺失时上限基准回退为候选池
+最优并标注 pool_fallback（dev 集 kilby 场景多为此类），见 raw 行 warnings。
 
 ## 四、OR-Tools vs COPT 对照（dev 集诊断，单独成表，不混入主比较）
 
@@ -123,6 +183,10 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 
 说明：COPT 在 75+ 节点 60 秒无 incumbent 记为 no_feasible_found（≠不可行）；
 OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之一）。
+**r202-s102 的 COPT 不可行证明仅针对该输入与 COPT 建模**：输入哈希
+`6a37086f286e0d1c…`；证明行求解器版本
+[]；独立校验器未采信
+该结论以外的任何求解器状态。
 
 ## 五、软预算越界统计（如实披露，不修正不剔除）
 
@@ -152,18 +216,58 @@ OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之�
   提升、60 秒硬截止机制、300 秒 COPT 诊断（预先指定 3 个代表性 dev 大场景、
   单独成表，不碰 test 集、不并入主比较）——均未在本轮执行。
 
+**分层可行率证据（可物化子集口径，全 39 场景中的 31 个）**：
+
+| 维度 | 层 | insert 可行 | rebuild 可行 | LD 可行 |
+|---|---|---|---|---|
+| 数据来源 | kilby | 0/22 | 3/22 | 22/22 |
+| 数据来源 | solomon | 7/9 | 5/9 | 8/9 |
+| 时间窗紧度 | normal | 7/8 | 5/8 | 8/8 |
+| 时间窗紧度 | tight | 0/1 | 0/1 | 0/1 |
+| 时间窗紧度 | — | 0/22 | 3/22 | 22/22 |
+| 锁比例 | 0.2 | 7/19 | 8/19 | 19/19 |
+| 锁比例 | 0.3 | 0/11 | 0/11 | 11/11 |
+| 锁比例 | 0.5 | 0/1 | 0/1 | 0/1 |
+| 订单规模 | 19–75 | 0/7 | 3/7 | 7/7 |
+| 订单规模 | 76–150 | 0/13 | 0/13 | 13/13 |
+| 订单规模 | >150 | 0/2 | 0/2 | 2/2 |
+| 订单规模 | ≤18 | 7/9 | 5/9 | 8/9 |
+
+演示口径：低扰动在大型场景响应约 60 秒（用满软预算持续改进），
+演示与宣传必须响应延迟与成本一并呈现，不得只报成本优势。
+
 ## 七、图表（由原始结果程序生成）
 
-- `chart_cost_test.png`
+- `chart_cost_test_solomon.png`
+- `chart_cost_test_kilby.png`
 - `chart_feasibility.png`
+- `chart_cost_diff.png`
 - `chart_sensitivity.png`
 
-## 八、复现命令
+**敏感性口径说明**：raw 中 dev 集的 cap1.05/1.20 行是三次独立求解（候选池
+各自重新搜索），其成本差异属独立运行波动，**不解释为**阈值效应；阈值效应
+证据来自固定候选池实验（同池仅改筛选阈值，随机种子与预算同主评测；
+`scripts/run_sensitivity_fixedpool.py`，结果在 `sensitivity_fixedpool/`）。
+
+## 八、复现命令与证据链
 
 ```bat
 .venv\Scripts\python.exe scripts\run_evaluation.py --split all --copt-diag --overwrite
-.venv\Scripts\python.exe scripts\build_evaluation_report.py
+.venv\Scripts\python.exe scripts\run_sensitivity_fixedpool.py   :: 固定池敏感性（dev）
+.venv\Scripts\python.exe scripts\build_evaluation_report.py     :: 一键重建本报告
 ```
+
+- 本报告由 `build_evaluation_report.py` 从 `raw/*.json` 程序生成，未手改汇总；
+  生成时强制执行清单↔原始结果一致性校验。
+- 证据链：`frozen_manifest.json`（冻结口径）→ `frozen_inputs.json`
+  （每场景草稿 SHA-256/种子/锁比例/依赖版本/提交号）→ 草稿文件
+  （`data/processed/scenarios/<split>/*.json`，随审查包移交）→ `raw/*.json`
+  → `summary.csv` / `reconciliation.csv` → 本报告。
+- **阶段 5 端到端证据**：确认后求解不读旧场景，回归测试
+  `test_confirm_becomes_active_version`、`test_version_drift_fails_honestly`、
+  `test_solve_version_conflict_409`、`test_old_version_export_uses_snapshot`
+  （tests/test_api_stage5.py）随全量 328 passed 通过；评测 runner 不经 API、
+  按冻结草稿确定性物化，每行 scenario_version 落盘。
 
 ## 九、诚实声明
 

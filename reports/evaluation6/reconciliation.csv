@@ -1,0 +1,40 @@
+﻿scenario_id,split,base_instance,n_orders,tw_tightness,lock_ratio,seed,draft_sha256,materialize,失败原因,进入主评测,insert,rebuild,low_disruption
+c101-s101,dev,C101,18,normal,0.2,101,5b0983b577fa4527ae0e26e054ece3ef10f47df0c9db6b44a17c2547b73d1243,OK(14ms),,是,可行,可行,可行
+c101-s102,dev,C101,17,tight,0.5,102,b9c284f612ef229b6edd7cd9ef06266f92023c96c0bf0a62e661af0c77258d9d,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+c102-s101,dev,C102,18,normal,0.2,101,2f47c01bf63b5842b072613cff2303401570cc8536e5c8aa91fed887b5810ef6,OK(0ms),,是,可行,可行,可行
+c102-s102,dev,C102,17,tight,0.5,102,20c3200d6a8514dee8b6f02da5959c361e63dc9954b330e1f3057afa600e3171,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+c201-s201,test,C201,18,normal,0.2,201,75f05516fd1a0dfd877df72a0fb73cd2a9b9186496a947c93a0b7f76354d9f3a,OK(16ms),,是,可行,预算内未找到解(≠不可行),可行
+c202-s201,test,C202,18,normal,0.2,201,01020a7aea59f86289d25db53b6f1fc3b5bbac7efedc1687fff2aac54648bf90,OK(0ms),,是,可行,可行,可行
+r101-s101,dev,R101,18,normal,0.2,101,e26f6f2a72159250f6725cf892c5430d6a04331f46359737a4ee8f8fb776e2ec,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+r101-s102,dev,R101,17,tight,0.5,102,0749fbe75a365013cc85358ac70b52e7ffa033c51b4526a25583b5ab2fc6b6f3,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+r102-s101,dev,R102,18,normal,0.2,101,f958f84f6d4065f01e339cb5bd16dba543a47fef72b5ef07a367d0ce6b58ebd2,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+r102-s102,dev,R102,17,tight,0.5,102,f051ce64e9896a737ae740917496d496e21ee3d3243dd66640113941a6494e2a,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+r201-s101,dev,R201,18,normal,0.2,101,c082d2047e680a604c156f8f9dfb03b7af4fe7920fdc5dba1e5150c03098969c,OK(0ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+r201-s102,dev,R201,17,tight,0.5,102,819187bcbb35861b08f88abfac7a299cbdf4f898d6c4bc994ab2b231fafe656b,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+r202-s101,dev,R202,18,normal,0.2,101,73bf07cb2964fc4c2dbbc5db9a80bbcf644f0f416994c5e85da75fbf3264639f,OK(0ms),,是,可行,可行,可行
+r202-s102,dev,R202,17,tight,0.5,102,da4fb6d4e8538f4bc199d430d038fbbf006338749ea8783a910fe94acc4fb1b6,OK(250ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),预算内未找到解(≠不可行)
+rc101-s201,test,RC101,18,normal,0.2,201,0202efee119ee972b1785f74a51a4159254a4f0ecd980d83b742d23703e5bbc4,物化失败,ValueError: E_PLAN_NOT_FOUND: 预算 20000ms,否,—,—,—
+rc201-s201,test,RC201,18,normal,0.2,201,49644c88287be956b3e5defecd2341fd4b914fc9208d681c0cf21217c3fed3ae,OK(0ms),,是,可行,可行,可行
+rc202-s201,test,RC202,18,normal,0.2,201,f2b2cef27a2b96666fc1e1fe85867ec035da939900a10e48cfb88f927be83a6d,OK(0ms),,是,可行,预算内未找到解(≠不可行),可行
+kilby-tai385-s201,test,kilby-tai385,385,—,0.2,201,6cd07d6d18d202d134409703c8efdb4ea31ba7045ec00c0acfc0b9a210a5b15b,OK(62ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c100-s101,dev,kilby-c100,100,—,0.3,101,247732bfbba8a349fe45ec0f4d5c386d8e8229aeae07e6ef41b2a42da1fc8e71,OK(31ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c100b-s101,dev,kilby-c100b,100,—,0.3,101,6425c6624cd747bf3bdf479d8045846d3c2b8f8cb6653c5ddd9dc4f1280f132f,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c120-s101,dev,kilby-c120,120,—,0.3,101,f3c10bf05e982de6a9979260989608a39fd7e90efbab0fdf56d2f649db38b366,OK(46ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c150-s101,dev,kilby-c150,150,—,0.3,101,b3eea9a99fed24385e389aeb7e352158094b6a2eacf510ada0adf38797bab5cd,OK(30ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c199-s201,test,kilby-c199,199,—,0.2,201,e98b7df081ae56a6b7685f5aa4a6c624889a4e5d49e010373bdd88bc367d83de,OK(32ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c50-s201,test,kilby-c50,50,—,0.2,201,fd8f91532a8ee368a9cce1f007688d0d6f2f5ada012f6efc816259eb1687b89f,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-c75-s201,test,kilby-c75,75,—,0.2,201,104322f18cb24a73f1d9c5756c27acd0ce7931680c931dc78bfd85eec6618a49,OK(31ms),,是,预算内未找到解(≠不可行),可行,可行
+kilby-f134-s101,dev,kilby-f134,134,—,0.3,101,b3e5df1e9a4e59481f163a00ea668a177ec9a28ef3f9cc3a0210fe13708acde4,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-f71-s201,test,kilby-f71,71,—,0.2,201,6d2345aa2b67695ffe853df17d9b9534c29d19ced0c105956df1e1c4c867f8d4,OK(14ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai100a-s101,dev,kilby-tai100a,100,—,0.3,101,0a4bf146b56970008f22d7fa2c29b3fb3b1fda767f68b36c1e86f8ceff8bf886,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai100b-s201,test,kilby-tai100b,100,—,0.2,201,3a8b9b0fb6fb0c3665f6f820075be68fc56244d893fce60c7013c365aaaa13ca,OK(15ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai100c-s101,dev,kilby-tai100c,100,—,0.3,101,48c143f6ca987c30886e510bbbefc27929e2a8548aaae94c5cabb478c105bd9f,OK(15ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai100d-s101,dev,kilby-tai100d,100,—,0.3,101,ed5ed003f3d5eb8607546b9d0fd8af0428d779cf67ef1831da97548a5872cda9,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai150a-s201,test,kilby-tai150a,150,—,0.2,201,0b6f23da0530cbe873c4a26bf011c0676b2445e2f59576ec5f82b97126764446,OK(16ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai150b-s101,dev,kilby-tai150b,150,—,0.3,101,72d4ea4d463ea35ad90733a3723b12d082db819b1ae76f520ffcef7bf40e32ca,OK(31ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai150c-s201,test,kilby-tai150c,150,—,0.2,201,ed5ac7a138df00dac6a1759d3a71785ee42de222e938b3de4048b08d08198f79,OK(15ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai150d-s101,dev,kilby-tai150d,150,—,0.3,101,863b896ee23adc16711845db67d183396b7258ed8badbd3c5547f3f1a153e6bc,OK(30ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai75a-s201,test,kilby-tai75a,75,—,0.2,201,3d7635859a46824c4a08f1adde73a3925ef38eb2e4c6f445a290a4190e5c920e,OK(15ms),,是,预算内未找到解(≠不可行),可行,可行
+kilby-tai75b-s101,dev,kilby-tai75b,75,—,0.3,101,a02fc24629a3e09a52cef6f19c3a876e70ca3cde2c72087cbc956b4452324f0c,OK(15ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai75c-s201,test,kilby-tai75c,75,—,0.2,201,9807d2bc8775300d09d64a2ca1b36ebf9447e469337fef36e472911ac7e227f3,OK(30ms),,是,预算内未找到解(≠不可行),预算内未找到解(≠不可行),可行
+kilby-tai75d-s201,test,kilby-tai75d,75,—,0.2,201,f59e188fc25150e828a50f6916b30ae4eab87c6dde64c8207162121c219a6539,OK(15ms),,是,预算内未找到解(≠不可行),可行,可行

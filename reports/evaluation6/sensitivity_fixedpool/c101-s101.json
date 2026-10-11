@@ -1,0 +1,78 @@
+{
+ "experiment": "sensitivity-fixedpool/1.0",
+ "scenario_id": "c101-s101",
+ "split": "dev",
+ "source": "C101",
+ "base_instance": "C101",
+ "seed": 101,
+ "lock_ratio_target": 0.2,
+ "budget_ms": 60000,
+ "caps": [
+  1.05,
+  1.1,
+  1.2
+ ],
+ "git_commit": "9162ab7",
+ "scenario_draft_hash": "fa00731e290d30adf1d2cc61cac5967efec73d0788bfbb36ea53c09775197113",
+ "scenario_input_hash": "1a608faff4bd795f2532e299a4190bbcd9ff28abbe75161b0134edf8107ba668",
+ "n_orders": 18,
+ "reference_runs": {
+  "insert": {
+   "status": "feasible",
+   "cost_s": 38540,
+   "validation_ok": true
+  },
+  "rebuild": {
+   "status": "feasible",
+   "cost_s": 42261,
+   "validation_ok": true
+  }
+ },
+ "reference_best_cost_s": 38540,
+ "reference_details": [
+  {
+   "name": "insert",
+   "used": true,
+   "total_travel_time_s": 38540
+  },
+  {
+   "name": "rebuild",
+   "used": true,
+   "total_travel_time_s": 42261
+  }
+ ],
+ "pool": {
+  "n_candidates": 216,
+  "elapsed_ms": 5032
+ },
+ "per_cap": {
+  "1.05": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 40467.0,
+   "selected_cost_s": 38540,
+   "pool_best_cost_s": 32443,
+   "vehicle_changes": 0,
+   "adjacency_breaks": 0
+  },
+  "1.1": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 42394.0,
+   "selected_cost_s": 38540,
+   "pool_best_cost_s": 32443,
+   "vehicle_changes": 0,
+   "adjacency_breaks": 0
+  },
+  "1.2": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 46248.0,
+   "selected_cost_s": 38540,
+   "pool_best_cost_s": 32443,
+   "vehicle_changes": 0,
+   "adjacency_breaks": 0
+  }
+ },
+ "elapsed_total_ms": 5250
+}

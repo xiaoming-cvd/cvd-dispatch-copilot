@@ -530,6 +530,50 @@ def _audit_output(
     return tuple(out)
 
 
+def generate_candidates(
+    scn: Scenario, time_limit_ms: int = 10_000, *,
+    max_archive_size: int = DEFAULT_MAX_ARCHIVE,
+    beam_width: int = DEFAULT_BEAM_WIDTH,
+    max_neighbors_per_candidate: int = DEFAULT_MAX_NEIGHBORS,
+) -> tuple[tuple["Candidate", ...], dict]:
+    """公开入口：只生成候选池（播种 + 局部搜索），不做上限筛选。
+
+    供"固定候选池、仅改变筛选阈值"的敏感性实验使用（2026-10-11 第六阶段
+    审查 P1）：同一场景同一预算与默认参数生成一次候选池，可在多个
+    cost_cap_ratio 上分别调用 select_from_pool 而不重新搜索。
+    """
+    started = time.monotonic()
+    deadline = started + time_limit_ms / 1000.0
+
+    def out_of_budget() -> bool:
+        return time.monotonic() >= deadline
+
+    archive: dict[tuple, Candidate] = {}
+    diagnostics: dict = {"time_limit_ms": time_limit_ms,
+                         "absolute_deadline_s": round(deadline, 6)}
+    _seed_candidates(scn, archive, diagnostics, out_of_budget, deadline,
+                     max_archive_size)
+    if archive:
+        _local_search(scn, archive, out_of_budget, diagnostics,
+                      beam_width, max_neighbors_per_candidate, max_archive_size)
+    candidates = sorted(archive.values(), key=lambda c: c.key)
+    diagnostics["elapsed_ms"] = int((time.monotonic() - started) * 1000)
+    return tuple(candidates), diagnostics
+
+
+def select_from_pool(
+    candidates: list["Candidate"] | tuple["Candidate", ...],
+    cost_cap_ratio: float, reference_best_cost: float | None,
+) -> tuple["Candidate | None", "Candidate | None", dict]:
+    """公开入口：在固定候选池上按上限规则选择（不重新搜索）。"""
+    if not (RATIO_MIN <= cost_cap_ratio <= RATIO_MAX):
+        raise ValueError(
+            f"E_COST_CAP_RATIO: {cost_cap_ratio} 超出范围 [{RATIO_MIN}, {RATIO_MAX}]")
+    diagnostics: dict = {}
+    return _select(list(candidates), diagnostics, cost_cap_ratio,
+                   reference_best_cost)
+
+
 def solve_low_disruption(
     scn: Scenario, time_limit_ms: int = 10_000,
     *,
@@ -548,20 +592,11 @@ def solve_low_disruption(
         raise ValueError(
             f"E_COST_CAP_RATIO: {cost_cap_ratio} 超出范围 [{RATIO_MIN}, {RATIO_MAX}]")
     started = time.monotonic()
-    deadline = started + time_limit_ms / 1000.0
-
-    def out_of_budget() -> bool:
-        return time.monotonic() >= deadline
-
-    archive: dict[tuple, Candidate] = {}
-    diagnostics: dict = {"time_limit_ms": time_limit_ms,
-                         "absolute_deadline_s": round(deadline, 6)}
-    _seed_candidates(scn, archive, diagnostics, out_of_budget, deadline,
-                     max_archive_size)
-    if archive:
-        _local_search(scn, archive, out_of_budget, diagnostics,
-                      beam_width, max_neighbors_per_candidate, max_archive_size)
-    candidates = sorted(archive.values(), key=lambda c: c.key)
+    candidates, gen_diag = generate_candidates(
+        scn, time_limit_ms, max_archive_size=max_archive_size,
+        beam_width=beam_width,
+        max_neighbors_per_candidate=max_neighbors_per_candidate)
+    diagnostics: dict = dict(gen_diag)
 
     reference_best, ref_details = _reference_best_cost(scn, reference_results)
     diagnostics["reference_details"] = ref_details

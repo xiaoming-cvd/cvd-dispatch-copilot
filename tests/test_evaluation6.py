@@ -108,3 +108,37 @@ def test_summary_covers_all_manifest_scenarios():
         assert r["budget_ms"] == str(manifest["budget_ms"])
     # 每个场景至少有一行，且预算列无空缺
     assert all(r["budget_ms"] for r in rows)
+    # 成本上限核验列存在且无违规（P1：selected ≤ allowed 或已如实标注）
+    assert "allowed_cost_s" in rows[0] and "within_cap" in rows[0]
+    assert not [r for r in rows if r["within_cap"] == "VIOLATION"]
+
+
+def test_fixedpool_sensitivity_dev_complete():
+    """固定候选池敏感性：dev 集全部物化成功场景（16）均有结果，且
+    同池筛选语义一致——selected > allowed 时 within_cap 必须为 False。"""
+    eval_dir = ROOT / "reports" / "evaluation6"
+    fp = eval_dir / "sensitivity_fixedpool"
+    manifest = json.loads((eval_dir / "frozen_manifest.json")
+                          .read_text(encoding="utf-8"))
+    raw_dir = eval_dir / "raw"
+    expected = []
+    for e in manifest["scenarios"]:
+        if e["split"] != "dev":
+            continue
+        rec = json.loads((raw_dir / f"{e['scenario_id']}.json")
+                         .read_text(encoding="utf-8"))
+        if not rec.get("materialize_error"):
+            expected.append(e["scenario_id"])
+    done = {p.stem for p in fp.glob("*.json")}
+    assert done == set(expected), (set(expected) - done, done - set(expected))
+    for p in fp.glob("*.json"):
+        rec = json.loads(p.read_text(encoding="utf-8"))
+        assert rec["experiment"] == "sensitivity-fixedpool/1.0"
+        assert rec["git_commit"]
+        for cap, d in rec["per_cap"].items():
+            sel, allowed = d["selected_cost_s"], d["allowed_cost_s"]
+            if sel is not None and allowed is not None:
+                if sel > allowed + 1e-6:
+                    assert d["within_cap"] is False, (p.stem, cap)
+                else:
+                    assert d["within_cap"] is True, (p.stem, cap)

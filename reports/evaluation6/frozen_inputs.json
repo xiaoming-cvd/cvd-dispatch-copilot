@@ -1,0 +1,370 @@
+{
+ "generated_at": "2026-10-11T16:05:52",
+ "git_commit": "9162ab71db178c6fe3a9c6daf33b2e05551c4837",
+ "python": "3.12.7",
+ "deps": {
+  "ortools": "9.14.6206",
+  "pydantic": "2.14.0",
+  "pytest": "9.1.1"
+ },
+ "budget_ms": 60000,
+ "cost_cap_ratio_test": 1.1,
+ "status_semantics": {
+  "TIMEOUT/NO_FEASIBLE_FOUND": "不等于不可行",
+  "OR-Tools FEASIBLE": "不等于证明最优",
+  "PROVEN_INFEASIBLE": "仅 COPT MIP 可给出"
+ },
+ "scenarios": [
+  {
+   "scenario_id": "c101-s101",
+   "split": "dev",
+   "base_instance": "C101",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "5b0983b577fa4527ae0e26e054ece3ef10f47df0c9db6b44a17c2547b73d1243",
+   "scenario_input_hash": "1a608faff4bd795f2532e299a4190bbcd9ff28abbe75161b0134edf8107ba668"
+  },
+  {
+   "scenario_id": "c101-s102",
+   "split": "dev",
+   "base_instance": "C101",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "b9c284f612ef229b6edd7cd9ef06266f92023c96c0bf0a62e661af0c77258d9d",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "c102-s101",
+   "split": "dev",
+   "base_instance": "C102",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "2f47c01bf63b5842b072613cff2303401570cc8536e5c8aa91fed887b5810ef6",
+   "scenario_input_hash": "63998c211883028147ae7d06ed9549faa702b022b6be2ca66e9c32600a33c5b2"
+  },
+  {
+   "scenario_id": "c102-s102",
+   "split": "dev",
+   "base_instance": "C102",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "20c3200d6a8514dee8b6f02da5959c361e63dc9954b330e1f3057afa600e3171",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "c201-s201",
+   "split": "test",
+   "base_instance": "C201",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "75f05516fd1a0dfd877df72a0fb73cd2a9b9186496a947c93a0b7f76354d9f3a",
+   "scenario_input_hash": "8b746dbc6a9d539799e1e323ba7882ce44d44ff725d76266c2d32a127aed3e5d"
+  },
+  {
+   "scenario_id": "c202-s201",
+   "split": "test",
+   "base_instance": "C202",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "01020a7aea59f86289d25db53b6f1fc3b5bbac7efedc1687fff2aac54648bf90",
+   "scenario_input_hash": "462566b9fc6ee7f529a62a1cc44c7642a6fdf6de58b5a7b047d7d6016ca62140"
+  },
+  {
+   "scenario_id": "r101-s101",
+   "split": "dev",
+   "base_instance": "R101",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "e26f6f2a72159250f6725cf892c5430d6a04331f46359737a4ee8f8fb776e2ec",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "r101-s102",
+   "split": "dev",
+   "base_instance": "R101",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "0749fbe75a365013cc85358ac70b52e7ffa033c51b4526a25583b5ab2fc6b6f3",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "r102-s101",
+   "split": "dev",
+   "base_instance": "R102",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "f958f84f6d4065f01e339cb5bd16dba543a47fef72b5ef07a367d0ce6b58ebd2",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "r102-s102",
+   "split": "dev",
+   "base_instance": "R102",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "f051ce64e9896a737ae740917496d496e21ee3d3243dd66640113941a6494e2a",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "r201-s101",
+   "split": "dev",
+   "base_instance": "R201",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "c082d2047e680a604c156f8f9dfb03b7af4fe7920fdc5dba1e5150c03098969c",
+   "scenario_input_hash": "28ef920ffebb6ae28907bf7cd274dab52c44db7d9d9a72ed8ada04a9711bd624"
+  },
+  {
+   "scenario_id": "r201-s102",
+   "split": "dev",
+   "base_instance": "R201",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "819187bcbb35861b08f88abfac7a299cbdf4f898d6c4bc994ab2b231fafe656b",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "r202-s101",
+   "split": "dev",
+   "base_instance": "R202",
+   "seed": 101,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "73bf07cb2964fc4c2dbbc5db9a80bbcf644f0f416994c5e85da75fbf3264639f",
+   "scenario_input_hash": "120eacedc1f515f7dffdcafb13050497e4bf745b968a3df16f4facce804fa88d"
+  },
+  {
+   "scenario_id": "r202-s102",
+   "split": "dev",
+   "base_instance": "R202",
+   "seed": 102,
+   "lock_ratio_target": 0.5,
+   "draft_sha256": "da4fb6d4e8538f4bc199d430d038fbbf006338749ea8783a910fe94acc4fb1b6",
+   "scenario_input_hash": "6a37086f286e0d1cea0948e12fbe6d8bc0b36ce7a15272c848391cddc4c06d00"
+  },
+  {
+   "scenario_id": "rc101-s201",
+   "split": "test",
+   "base_instance": "RC101",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "0202efee119ee972b1785f74a51a4159254a4f0ecd980d83b742d23703e5bbc4",
+   "scenario_input_hash": null
+  },
+  {
+   "scenario_id": "rc201-s201",
+   "split": "test",
+   "base_instance": "RC201",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "49644c88287be956b3e5defecd2341fd4b914fc9208d681c0cf21217c3fed3ae",
+   "scenario_input_hash": "8daf14c752a04a800cee65928426b68e41cf19ed4cc881c6fafe13583b95887c"
+  },
+  {
+   "scenario_id": "rc202-s201",
+   "split": "test",
+   "base_instance": "RC202",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "f2b2cef27a2b96666fc1e1fe85867ec035da939900a10e48cfb88f927be83a6d",
+   "scenario_input_hash": "cd5bce4184dff5a217841c46284930d5724708735260187ba782430563c4ee8b"
+  },
+  {
+   "scenario_id": "kilby-tai385-s201",
+   "split": "test",
+   "base_instance": "kilby-tai385",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "6cd07d6d18d202d134409703c8efdb4ea31ba7045ec00c0acfc0b9a210a5b15b",
+   "scenario_input_hash": "0c88a6d3140c9d0710d993a865f129fc0c131a87721a7c907b79517aead4d6c8"
+  },
+  {
+   "scenario_id": "kilby-c100-s101",
+   "split": "dev",
+   "base_instance": "kilby-c100",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "247732bfbba8a349fe45ec0f4d5c386d8e8229aeae07e6ef41b2a42da1fc8e71",
+   "scenario_input_hash": "474895d851594e8523eabaf1cff7b243952d0dc818c587d8b321b61b97b60fb5"
+  },
+  {
+   "scenario_id": "kilby-c100b-s101",
+   "split": "dev",
+   "base_instance": "kilby-c100b",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "6425c6624cd747bf3bdf479d8045846d3c2b8f8cb6653c5ddd9dc4f1280f132f",
+   "scenario_input_hash": "1a35902a9bba88d54c35c64808d2ff6182340d0b6957aa85f3add849d5518ba8"
+  },
+  {
+   "scenario_id": "kilby-c120-s101",
+   "split": "dev",
+   "base_instance": "kilby-c120",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "f3c10bf05e982de6a9979260989608a39fd7e90efbab0fdf56d2f649db38b366",
+   "scenario_input_hash": "2e3a4b8f753f47d806d814fd6ff04d70b024b8e6d3c04f44f06d31cbd4ea23c9"
+  },
+  {
+   "scenario_id": "kilby-c150-s101",
+   "split": "dev",
+   "base_instance": "kilby-c150",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "b3eea9a99fed24385e389aeb7e352158094b6a2eacf510ada0adf38797bab5cd",
+   "scenario_input_hash": "0d4e210e8200ec5a8765fe5583b069eaeee81cd0d37a6fc38a8c03b54e039af4"
+  },
+  {
+   "scenario_id": "kilby-c199-s201",
+   "split": "test",
+   "base_instance": "kilby-c199",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "e98b7df081ae56a6b7685f5aa4a6c624889a4e5d49e010373bdd88bc367d83de",
+   "scenario_input_hash": "be089b56b031921caaf88580cb182d9df6a493b24b7c2c87da669de141dd3a79"
+  },
+  {
+   "scenario_id": "kilby-c50-s201",
+   "split": "test",
+   "base_instance": "kilby-c50",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "fd8f91532a8ee368a9cce1f007688d0d6f2f5ada012f6efc816259eb1687b89f",
+   "scenario_input_hash": "e2d33adbd64081dac6eb37f38da8fed4363f30598effa7e2448020b8590ec9fb"
+  },
+  {
+   "scenario_id": "kilby-c75-s201",
+   "split": "test",
+   "base_instance": "kilby-c75",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "104322f18cb24a73f1d9c5756c27acd0ce7931680c931dc78bfd85eec6618a49",
+   "scenario_input_hash": "566044cd7753ce9d6a7e8a814a7caafc84a54e9d204bf318e887a59c0de98719"
+  },
+  {
+   "scenario_id": "kilby-f134-s101",
+   "split": "dev",
+   "base_instance": "kilby-f134",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "b3e5df1e9a4e59481f163a00ea668a177ec9a28ef3f9cc3a0210fe13708acde4",
+   "scenario_input_hash": "24cd1d9fd73c60115afbf5423c68bd3c4254e92c28f0f3498172c80a18d15fe9"
+  },
+  {
+   "scenario_id": "kilby-f71-s201",
+   "split": "test",
+   "base_instance": "kilby-f71",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "6d2345aa2b67695ffe853df17d9b9534c29d19ced0c105956df1e1c4c867f8d4",
+   "scenario_input_hash": "f8ff1eb8c4fe5c9771080c651594874c5042faaa5b1fa2132c439dcaccc1f33e"
+  },
+  {
+   "scenario_id": "kilby-tai100a-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai100a",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "0a4bf146b56970008f22d7fa2c29b3fb3b1fda767f68b36c1e86f8ceff8bf886",
+   "scenario_input_hash": "cd1f3aa54def9fafccbd32cd4c1e7259c779933786cfa87f0d6414f92990979e"
+  },
+  {
+   "scenario_id": "kilby-tai100b-s201",
+   "split": "test",
+   "base_instance": "kilby-tai100b",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "3a8b9b0fb6fb0c3665f6f820075be68fc56244d893fce60c7013c365aaaa13ca",
+   "scenario_input_hash": "ad5a51def46362d3aa9f8133ab65cf558e5f1325c7fcfaf732faf4fea4a90ca4"
+  },
+  {
+   "scenario_id": "kilby-tai100c-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai100c",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "48c143f6ca987c30886e510bbbefc27929e2a8548aaae94c5cabb478c105bd9f",
+   "scenario_input_hash": "2627b75d0fc9826c8cb30bd1b218cdb1346f91f0079ce2c64ff32a1fe2793517"
+  },
+  {
+   "scenario_id": "kilby-tai100d-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai100d",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "ed5ed003f3d5eb8607546b9d0fd8af0428d779cf67ef1831da97548a5872cda9",
+   "scenario_input_hash": "8ed0b2e4b03ab90a52dfe6c0a55346f27430500c63c1689cc78b0081bb57311e"
+  },
+  {
+   "scenario_id": "kilby-tai150a-s201",
+   "split": "test",
+   "base_instance": "kilby-tai150a",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "0b6f23da0530cbe873c4a26bf011c0676b2445e2f59576ec5f82b97126764446",
+   "scenario_input_hash": "70e251fe935de609e06e83e7783128963362d8c908b2febd38971485f63d9016"
+  },
+  {
+   "scenario_id": "kilby-tai150b-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai150b",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "72d4ea4d463ea35ad90733a3723b12d082db819b1ae76f520ffcef7bf40e32ca",
+   "scenario_input_hash": "84dc8919b2aefeb2778762d5abfd987d839e0e566ac924645fab0b89e3d93588"
+  },
+  {
+   "scenario_id": "kilby-tai150c-s201",
+   "split": "test",
+   "base_instance": "kilby-tai150c",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "ed5ac7a138df00dac6a1759d3a71785ee42de222e938b3de4048b08d08198f79",
+   "scenario_input_hash": "e4a5dbe33e9d44b6475c1b03f70bb927a043325839c9c0fae6329d897f955a2e"
+  },
+  {
+   "scenario_id": "kilby-tai150d-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai150d",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "863b896ee23adc16711845db67d183396b7258ed8badbd3c5547f3f1a153e6bc",
+   "scenario_input_hash": "5a94c4f06a19b7fea1e8f593f091bea9ce3732d4867fe2b9bf0e22c043fda594"
+  },
+  {
+   "scenario_id": "kilby-tai75a-s201",
+   "split": "test",
+   "base_instance": "kilby-tai75a",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "3d7635859a46824c4a08f1adde73a3925ef38eb2e4c6f445a290a4190e5c920e",
+   "scenario_input_hash": "0ede4e3e3184aadd214f1fc525ba07a3f2fb3003afe67ce996c2723fb425989e"
+  },
+  {
+   "scenario_id": "kilby-tai75b-s101",
+   "split": "dev",
+   "base_instance": "kilby-tai75b",
+   "seed": 101,
+   "lock_ratio_target": 0.3,
+   "draft_sha256": "a02fc24629a3e09a52cef6f19c3a876e70ca3cde2c72087cbc956b4452324f0c",
+   "scenario_input_hash": "488716e2524471cbad9250085b5a48c2ac583093fc310c469d4ede5ec1615e68"
+  },
+  {
+   "scenario_id": "kilby-tai75c-s201",
+   "split": "test",
+   "base_instance": "kilby-tai75c",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "9807d2bc8775300d09d64a2ca1b36ebf9447e469337fef36e472911ac7e227f3",
+   "scenario_input_hash": "fb31d0cd63978c1174e9e89d0b64204c12148fa967efd4de57b3db1978e47a48"
+  },
+  {
+   "scenario_id": "kilby-tai75d-s201",
+   "split": "test",
+   "base_instance": "kilby-tai75d",
+   "seed": 201,
+   "lock_ratio_target": 0.2,
+   "draft_sha256": "f59e188fc25150e828a50f6916b30ae4eab87c6dde64c8207162121c219a6539",
+   "scenario_input_hash": "31ac0cd3e772f8d75936617fd95a8559c4f502c2e99588b9e7d3925912c33340"
+  }
+ ]
+}

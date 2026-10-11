@@ -49,6 +49,51 @@ def enrich_error_records(recs: list[dict], manifest: dict) -> None:
             rec["n_orders"] = "?"
 
 
+def scenario_meta(sid: str, split: str) -> dict:
+    """场景草稿元数据（时间窗紧度/锁比例/种子/草稿哈希）。"""
+    import hashlib
+    p = ROOT / "data" / "processed" / "scenarios" / split / f"{sid}.json"
+    out = {"tw": "—", "lock": None, "seed": None, "draft_sha256": None}
+    try:
+        raw_bytes = p.read_bytes()
+        out["draft_sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+        meta = json.loads(raw_bytes.decode("utf-8")).get("_meta", {})
+        ev = (meta.get("event_log") or [{}])[0]
+        out["tw"] = ev.get("tw_tightness") or "—"
+        out["lock"] = meta.get("lock_ratio_target")
+        out["seed"] = meta.get("seed")
+    except Exception:
+        pass
+    return out
+
+
+def cap_checks(recs: list[dict]) -> list[dict]:
+    """低扰动行成本上限逐行核验：selected_cost ≤ allowed_cost，
+    或该行已如实标注 no_candidate_within_cost_cap（within_reference_cap=false）。
+    """
+    out = []
+    for rec in recs:
+        for r in rec.get("rows", []):
+            if r["method"] != "low_disruption" or not r.get("has_solution"):
+                continue
+            ratio, ref = r.get("cost_cap_ratio"), r.get("reference_best_cost_s")
+            sel = r.get("total_travel_time_s")
+            item = {"scenario_id": rec["scenario_id"], "cap_ratio": ratio,
+                    "reference_best_cost_s": ref, "selected_cost_s": sel,
+                    "allowed_cost_s": None, "verdict": "数据不足"}
+            if ratio is None or ref is None or sel is None:
+                out.append(item)
+                continue
+            allowed = ratio * ref
+            flagged = any("within_reference_cap=false" in w
+                          for w in r.get("warnings", []))
+            within = sel <= allowed + 1e-6
+            item["allowed_cost_s"] = round(allowed, 3)
+            item["verdict"] = "ok" if (within or flagged) else "VIOLATION"
+            out.append(item)
+    return out
+
+
 def main_rows(rec: dict) -> dict[str, dict]:
     """主比较三方法行（rebuild 取 OR-Tools 默认行）。"""
     out = {}
@@ -104,11 +149,13 @@ def comparison_table(recs: list[dict], split: str) -> tuple[str, dict]:
                if x in m else "缺行" for x in METHODS),
             rec.get("end_to_end_ms", "?"),
         ])
+    n_split_all = sum(1 for rec in recs if rec.get("split") == split)
     for x in METHODS:
         ok = sum(1 for rec in recs if rec.get("split") == split
                  and not rec.get("materialize_error")
                  and main_rows(rec).get(x, {}).get("status") == "feasible")
-        stats[x] = (ok, denom)
+        stats[x] = (ok, denom)               # 可物化子集口径
+        stats[x + "_frozen"] = (ok, n_split_all)  # 冻结集口径（分母含物化失败）
     table = md_table(
         ["场景", "订单数", "insert(状态/成本s/耗时ms)", "rebuild OR-Tools",
          "low_disruption(cap1.10)", "端到端ms"], rows)
@@ -166,27 +213,31 @@ def charts(recs: list[dict]) -> list[str]:
 
     test_recs = [r for r in recs if r.get("split") == "test"
                  and not r.get("materialize_error")]
-    # 图1：test 集三方法成本对比（条形，按订单数排序）
-    test_recs.sort(key=lambda r: r["n_orders"])
-    labels = [r["scenario_id"].replace("kilby-", "k-") for r in test_recs]
-    x = range(len(test_recs))
-    width = 0.27
-    fig, ax = plt.subplots(figsize=(11, 5))
-    for i, meth in enumerate(METHODS):
-        vals = []
-        for rec in test_recs:
-            row = main_rows(rec).get(meth, {})
-            v = row.get("total_travel_time_s")
-            vals.append(v if row.get("has_solution") and v is not None else 0)
-        ax.bar([p + (i - 1) * width for p in x], vals, width, label=meth)
-    ax.set_xticks(list(x)); ax.set_xticklabels(labels, rotation=60, ha="right", fontsize=8)
-    ax.set_ylabel("总行驶时间（模型秒，抽象成本，非人民币）")
-    ax.set_title("阶段6 评测 · 测试集三方法成本对比（60s 软预算）")
-    ax.legend()
-    p = EVAL_DIR / "chart_cost_test.png"
-    fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
+    # 图1a/1b：test 集成本按数据来源分图（Solomon 与 Kilby 量级差大，不分图不可读）
+    for source, tag in (("solomon", "solomon"), ("kilby", "kilby")):
+        sub = [r for r in test_recs if r.get("source") == source]
+        if not sub:
+            continue
+        sub.sort(key=lambda r: r["n_orders"])
+        labels = [r["scenario_id"].replace("kilby-", "k-") for r in sub]
+        x = range(len(sub))
+        width = 0.27
+        fig, ax = plt.subplots(figsize=(10, 5))
+        for i, meth in enumerate(METHODS):
+            vals = []
+            for rec in sub:
+                row = main_rows(rec).get(meth, {})
+                v = row.get("total_travel_time_s")
+                vals.append(v if row.get("has_solution") and v is not None else 0)
+            ax.bar([p + (i - 1) * width for p in x], vals, width, label=meth)
+        ax.set_xticks(list(x)); ax.set_xticklabels(labels, rotation=60, ha="right", fontsize=8)
+        ax.set_ylabel("总行驶时间（模型秒，抽象成本，非人民币）")
+        ax.set_title(f"阶段6 评测 · 测试集三方法成本对比（{source}，60s 软预算）")
+        ax.legend()
+        p = EVAL_DIR / f"chart_cost_test_{tag}.png"
+        fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
 
-    # 图2：可行率（test + dev）
+    # 图2：可行率（可物化子集口径，冻结集口径在报告表格双行给出）
     fig, ax = plt.subplots(figsize=(7, 4))
     groups = []
     for split in ("dev", "test"):
@@ -203,27 +254,57 @@ def charts(recs: list[dict]) -> list[str]:
     for i, g in enumerate(groups):
         ax.text(i, (g[1] / g[2] * 100 if g[2] else 0) + 2, f"{g[1]}/{g[2]}",
                 ha="center", fontsize=8)
-    ax.set_title("可行率（标签 = 可行样本数/分母；物化超时样本不计入分母）")
+    ax.set_title("可行率（可物化子集口径；物化失败样本见报告〇节，不静默剔除）")
     p = EVAL_DIR / "chart_feasibility.png"
     fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
 
-    # 图3：dev 集 110% 上限敏感性（low_disruption 三种 cap 的成本）
-    dev_recs = [r for r in recs if r.get("split") == "dev"
-                and not r.get("materialize_error")]
-    caps = {}
-    for rec in dev_recs:
-        for row in rec.get("rows", []):
-            if row["method"] == "low_disruption" \
-                    and row.get("cost_cap_ratio") in (1.05, 1.1, 1.2) \
-                    and row.get("has_solution"):
-                caps.setdefault(row["cost_cap_ratio"], []).append(
-                    row["total_travel_time_s"])
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.boxplot([caps.get(c, []) for c in (1.05, 1.1, 1.2)],
-               labels=["cap=1.05", "cap=1.10(冻结)", "cap=1.20"])
-    ax.set_ylabel("low_disruption 成本（模型秒）")
-    ax.set_title("dev 集 110% 成本上限附近敏感性（n="
-                 f"{max(len(caps.get(c, [])) for c in (1.05, 1.1, 1.2))}）")
+    # 图3：配对成本差——仅两方法均可行的配对样本（注明 n，不推断总体）
+    diffs = []
+    for rec in test_recs:
+        m = main_rows(rec)
+        ld = m.get("low_disruption")
+        if not ld or not ld.get("has_solution"):
+            continue
+        refs = [m[x]["total_travel_time_s"] for x in ("insert", "rebuild")
+                if m.get(x, {}).get("has_solution")
+                and m[x].get("total_travel_time_s") is not None]
+        if refs:
+            diffs.append((rec["scenario_id"].replace("kilby-", "k-"),
+                          ld["total_travel_time_s"] - min(refs)))
+    fig, ax = plt.subplots(figsize=(10, 4))
+    xs = range(len(diffs))
+    ax.bar(xs, [d[1] for d in diffs],
+           color=["#1a7f37" if d[1] <= 0 else "#b35900" for d in diffs])
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.set_xticks(list(xs)); ax.set_xticklabels([d[0] for d in diffs],
+                                                rotation=60, ha="right", fontsize=8)
+    ax.set_ylabel("LD − min(insert, rebuild)（模型秒，负=LD 更低）")
+    ax.set_title(f"测试集配对成本差（仅双方均可行样本，n={len(diffs)}，"
+                 "不能据此推断总体节约）")
+    p = EVAL_DIR / "chart_cost_diff.png"
+    fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
+
+    # 图4：固定候选池敏感性（同池仅改筛选阈值；非独立重跑）
+    fp_dir = EVAL_DIR / "sensitivity_fixedpool"
+    series = []
+    if fp_dir.is_dir():
+        for jp in sorted(fp_dir.glob("*.json")):
+            d = json.loads(jp.read_text(encoding="utf-8"))
+            caps_d = d.get("per_cap") or {}
+            vals = [caps_d.get(str(c), {}).get("selected_cost_s")
+                    for c in (1.05, 1.1, 1.2)]
+            if any(v is None for v in vals):
+                continue
+            series.append((d["scenario_id"].replace("kilby-", "k-"), vals))
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for name, vals in series:
+        ax.plot([1.05, 1.10, 1.20], vals, marker="o", linewidth=1, label=name)
+    ax.set_xlabel("cost_cap_ratio（固定候选池，仅改变筛选阈值）")
+    ax.set_ylabel("选中方案成本（模型秒）")
+    ax.set_title(f"dev 集固定候选池上限敏感性（n={len(series)}；同池仅改阈值："
+                 "cap 放宽⇒可选集合单调增大；选中成本按扰动优先规则不保证单调）")
+    if series:
+        ax.legend(fontsize=7, ncol=2)
     p = EVAL_DIR / "chart_sensitivity.png"
     fig.savefig(p, bbox_inches="tight"); plt.close(fig); paths.append(p.name)
     return paths
@@ -243,7 +324,10 @@ def main() -> None:
                     "cost_cap_ratio", "status", "has_solution",
                     "total_travel_time_s", "elapsed_ms", "elapsed_solve_ms",
                     "elapsed_validate_ms", "end_to_end_ms", "validation_ok",
-                    "solver_status", "scenario_input_hash", "budget_ms"])
+                    "solver_status", "scenario_input_hash", "budget_ms",
+                    "allowed_cost_s", "within_cap"])
+        caps_ok = cap_checks(recs)
+        cap_by_key = {(c["scenario_id"], c["cap_ratio"]): c for c in caps_ok}
         for rec in recs:
             if rec.get("materialize_error"):
                 w.writerow([rec["scenario_id"], rec.get("split"),
@@ -252,9 +336,11 @@ def main() -> None:
                             rec.get("end_to_end_ms", ""), "",
                             rec["materialize_error"],
                             rec.get("scenario_input_hash", ""),
-                            manifest["budget_ms"]])
+                            manifest["budget_ms"], "", ""])
                 continue
             for row in rec.get("rows", []):
+                ck = cap_by_key.get((rec["scenario_id"],
+                                     row.get("cost_cap_ratio")))
                 w.writerow([rec["scenario_id"], rec.get("split"),
                             rec.get("n_orders"), row["method"],
                             row.get("backend") or row.get("backend_actual"),
@@ -266,7 +352,48 @@ def main() -> None:
                             row.get("end_to_end_ms"), row.get("validation_ok"),
                             row.get("solver_status"),
                             rec.get("scenario_input_hash"),
-                            rec.get("budget_ms", manifest["budget_ms"])])
+                            rec.get("budget_ms", manifest["budget_ms"]),
+                            ck["allowed_cost_s"] if ck else "",
+                            ck["verdict"] if ck else ""])
+
+    # 对账表：每个冻结 ID 的物化状态/失败原因/哈希/是否进入主评测/三方法状态
+    recon_rows = []
+    for e in manifest["scenarios"]:
+        sid, split = e["scenario_id"], e["split"]
+        rec = next((r for r in recs if r["scenario_id"] == sid), None)
+        meta = scenario_meta(sid, split)
+        if rec is None or rec.get("materialize_error"):
+            recon_rows.append([sid, split, e.get("base_instance"),
+                               rec.get("n_orders") if rec else "?",
+                               meta["tw"], meta["lock"], meta["seed"],
+                               (meta["draft_sha256"] or "")[:12],
+                               "物化失败",
+                               (rec["materialize_error"][:40]
+                                if rec else "无原始记录"),
+                               "否", "—", "—", "—"])
+        else:
+            m = main_rows(rec)
+            recon_rows.append([
+                sid, split, e.get("base_instance"), rec.get("n_orders"),
+                meta["tw"], meta["lock"], meta["seed"],
+                (meta["draft_sha256"] or "")[:12],
+                f"OK({rec.get('materialize_ms')}ms)", "", "是",
+                *[status_cn(m[x]["status"]) if x in m else "缺行"
+                  for x in METHODS]])
+    with open(EVAL_DIR / "reconciliation.csv", "w", newline="",
+              encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["scenario_id", "split", "base_instance", "n_orders",
+                    "tw_tightness", "lock_ratio", "seed", "draft_sha256",
+                    "materialize", "失败原因", "进入主评测",
+                    "insert", "rebuild", "low_disruption"])
+        for i, e in enumerate(manifest["scenarios"]):
+            row = list(recon_rows[i])
+            row[7] = scenario_meta(e["scenario_id"], e["split"])["draft_sha256"]
+            w.writerow(row)
+    recon_md = md_table(
+        ["场景", "组", "来源", "单", "TW", "锁", "种子", "草稿哈希",
+         "物化", "失败原因", "主评测", "insert", "rebuild", "LD"], recon_rows)
 
     # 一致性校验：清单 39 场景 ↔ summary 场景逐一对齐，缺一即失败
     man_ids = {e["scenario_id"] for e in manifest["scenarios"]}
@@ -340,6 +467,111 @@ def main() -> None:
     n_dev = sum(1 for r in recs if r.get("split") == "dev")
     n_test_mat = n_mat.get("test", 0)
     n_dev_mat = n_mat.get("dev", 0)
+
+    # 成本上限核验汇总（P1：逐行 best_feasible/allowed/selected）
+    n_violation = sum(1 for c in caps_ok if c["verdict"] == "VIOLATION")
+    n_insufficient = sum(1 for c in caps_ok if c["verdict"] == "数据不足")
+    n_flagged = sum(1 for c in caps_ok
+                    if c["verdict"] == "ok" and c["allowed_cost_s"]
+                    and c["selected_cost_s"] is not None
+                    and c["selected_cost_s"] > c["allowed_cost_s"] + 1e-6)
+    viol_rows = [c for c in caps_ok if c["verdict"] == "VIOLATION"]
+
+    # 分层边界证据：按数据来源/时间窗紧度/锁比例/订单规模（可物化子集口径）
+    def _bucket_n(n):
+        n = int(n)
+        return "≤18" if n <= 18 else "19–75" if n <= 75 else \
+            "76–150" if n <= 150 else ">150"
+
+    strata_acc = {}
+    for e in manifest["scenarios"]:
+        rec = next((r for r in recs if r["scenario_id"] == e["scenario_id"]),
+                   None)
+        if rec is None or rec.get("materialize_error"):
+            continue
+        meta = scenario_meta(e["scenario_id"], e["split"])
+        dims = {"数据来源": rec.get("source") or e.get("base_instance"),
+                "时间窗紧度": meta["tw"],
+                "锁比例": (f"{meta['lock']}" if meta["lock"] is not None
+                          else "—"),
+                "订单规模": _bucket_n(rec.get("n_orders", 0))}
+        m = main_rows(rec)
+        for dim, key in dims.items():
+            cell = strata_acc.setdefault((dim, key), {x: [0, 0] for x in METHODS})
+            for x in METHODS:
+                cell[x][1] += 1
+                if m.get(x, {}).get("status") == "feasible":
+                    cell[x][0] += 1
+    strata_rows = []
+    for dim in ("数据来源", "时间窗紧度", "锁比例", "订单规模"):
+        keys = [k for (d, k) in strata_acc if d == dim]
+        for key in sorted(keys, key=str):
+            cell = strata_acc[(dim, key)]
+            strata_rows.append([dim, key] + [
+                f"{cell[x][0]}/{cell[x][1]}" for x in METHODS])
+    strata_table = md_table(
+        ["维度", "层", "insert 可行", "rebuild 可行", "LD 可行"], strata_rows)
+
+    # r202-s102 COPT 不可行证明的证据指针（模型版本+输入哈希）
+    proof = {}
+    for rec in recs:
+        if rec["scenario_id"] == "r202-s102":
+            proof = {"hash": rec.get("scenario_input_hash"),
+                     "rows": [r for r in rec.get("rows", [])
+                              if r.get("solver_status") == "proven_infeasible"]}
+
+    # frozen_inputs.json：冻结输入证据（草稿哈希/种子/锁比例/依赖/提交号）
+    import platform as _pf
+    import subprocess as _sp
+
+    def _dep(mod):
+        try:
+            out = _sp.run(
+                [str(ROOT / ".venv" / "Scripts" / "python.exe"), "-c",
+                 f"import {mod} as m; print(getattr(m, '__version__', '?'))"],
+                capture_output=True, text=True, timeout=30)
+            return out.stdout.strip() or "未安装"
+        except Exception:
+            return "未安装"
+    try:
+        commit = _sp.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                         capture_output=True, text=True,
+                         timeout=10).stdout.strip()
+    except Exception:
+        commit = "?"
+    try:
+        py_ver = _sp.run(
+            [str(ROOT / ".venv" / "Scripts" / "python.exe"), "-c",
+             "import platform; print(platform.python_version())"],
+            capture_output=True, text=True, timeout=30).stdout.strip()
+    except Exception:
+        py_ver = _pf.python_version()
+    frozen_inputs = {
+        "generated_at": __import__('datetime').datetime.now()
+        .isoformat(timespec="seconds"),
+        "git_commit": commit,
+        "python": py_ver,
+        "deps": {"ortools": _dep("ortools"), "pydantic": _dep("pydantic"),
+                 "pytest": _dep("pytest")},
+        "budget_ms": manifest["budget_ms"],
+        "cost_cap_ratio_test": manifest["cost_cap_ratio"],
+        "status_semantics": manifest["status_semantics"],
+        "scenarios": [],
+    }
+    for e in manifest["scenarios"]:
+        meta = scenario_meta(e["scenario_id"], e["split"])
+        rec = next((r for r in recs if r["scenario_id"] == e["scenario_id"]),
+                   None)
+        frozen_inputs["scenarios"].append({
+            "scenario_id": e["scenario_id"], "split": e["split"],
+            "base_instance": e.get("base_instance"), "seed": meta["seed"],
+            "lock_ratio_target": meta["lock"],
+            "draft_sha256": meta["draft_sha256"],
+            "scenario_input_hash": (rec or {}).get("scenario_input_hash"),
+        })
+    (EVAL_DIR / "frozen_inputs.json").write_text(
+        json.dumps(frozen_inputs, ensure_ascii=False, indent=1),
+        encoding="utf-8")
     report = f"""# 阶段 6 评测报告（60 秒软预算版）
 
 - 生成时间：{__import__('datetime').datetime.now().isoformat(timespec='seconds')}
@@ -366,12 +598,21 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 
 {mat_fail_table}
 
+**manifest 对账表（全部 39 个冻结 ID）**：物化状态 / 失败原因 / 草稿哈希 /
+是否进入主评测 / 三方法状态，逐行可核；完整版（含完整 SHA-256 与输入哈希）
+见同目录 `reconciliation.csv`：
+
+{recon_md}
+
 ## 一、测试集（冻结配置，test，n={n_test}，其中物化失败 {n_test_mat} 个）
 
 {test_table}
 
-**可行率**（分母 = 物化成功样本；物化超时单独列出，不偷偷剔除）：
-{md_table(["方法", "可行样本/分母"], [["insert", rate(test_stats, "insert")], ["rebuild OR-Tools", rate(test_stats, "rebuild")], ["low_disruption(1.10)", rate(test_stats, "low_disruption")]])}
+**可行率（双口径并报，不得混用）**：
+{md_table(["方法", "冻结集口径(分母16)", "可物化子集口径(分母15)"],
+          [["insert", rate(test_stats, "insert_frozen"), rate(test_stats, "insert")],
+           ["rebuild OR-Tools", rate(test_stats, "rebuild_frozen"), rate(test_stats, "rebuild")],
+           ["low_disruption(1.10)", rate(test_stats, "low_disruption_frozen"), rate(test_stats, "low_disruption")]])}
 
 **失败分布**：{dict(dist_test)}
 
@@ -379,7 +620,7 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 
 {dev_table}
 
-**可行率**：insert {rate(dev_stats, 'insert')}；rebuild OR-Tools {rate(dev_stats, 'rebuild')}；low_disruption {rate(dev_stats, 'low_disruption')}
+**可行率（双口径）**：insert 冻结集 {rate(dev_stats, 'insert_frozen')} / 可物化 {rate(dev_stats, 'insert')}；rebuild OR-Tools 冻结集 {rate(dev_stats, 'rebuild_frozen')} / 可物化 {rate(dev_stats, 'rebuild')}；low_disruption 冻结集 {rate(dev_stats, 'low_disruption_frozen')} / 可物化 {rate(dev_stats, 'low_disruption')}
 **失败分布**：{dict(dist_dev)}
 
 ## 三、配对比较（注明样本占比，单位：模型行驶秒）
@@ -388,12 +629,30 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 - {paired(recs, 'test', 'rebuild', 'low_disruption')}
 - {paired(recs, 'test', 'insert', 'rebuild')}
 
+配对样本少（如 insert×rebuild 仅 5 个），成本优势结论仅限该配对子集，
+不得推断总体节约；`chart_cost_diff.png` 为配对成本差可视化。
+
+## 三·补、成本上限逐行核验（P1）
+
+低扰动全部 {len(caps_ok)} 个已求解行逐行核验
+`selected_cost ≤ allowed_cost(=cap_ratio × reference_best_cost)`：
+**违规 {n_violation} 行**；未超上限 {len(caps_ok) - n_violation - n_insufficient - n_flagged} 行；
+超上限但已如实标注 `within_reference_cap=false`（no_candidate_within_cost_cap）
+{n_flagged} 行；数据不足 {n_insufficient} 行。
+{('违规明细：' + '; '.join(f"{c['scenario_id']}(cap={c['cap_ratio']}, sel={c['selected_cost_s']}, allowed={c['allowed_cost_s']})" for c in viol_rows)) if viol_rows else '逐行明细见 summary.csv 的 allowed_cost_s / within_cap 列。'}
+注意：reference_best 来自跨方法已验证方案；其缺失时上限基准回退为候选池
+最优并标注 pool_fallback（dev 集 kilby 场景多为此类），见 raw 行 warnings。
+
 ## 四、OR-Tools vs COPT 对照（dev 集诊断，单独成表，不混入主比较）
 
 {copt_table}
 
 说明：COPT 在 75+ 节点 60 秒无 incumbent 记为 no_feasible_found（≠不可行）；
 OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之一）。
+**r202-s102 的 COPT 不可行证明仅针对该输入与 COPT 建模**：输入哈希
+`{(proof.get('hash') or '—')[:16]}…`；证明行求解器版本
+{[r.get('solver_version') for r in proof.get('rows', [])]}；独立校验器未采信
+该结论以外的任何求解器状态。
 
 ## 五、软预算越界统计（如实披露，不修正不剔除）
 
@@ -423,16 +682,41 @@ OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之�
   提升、60 秒硬截止机制、300 秒 COPT 诊断（预先指定 3 个代表性 dev 大场景、
   单独成表，不碰 test 集、不并入主比较）——均未在本轮执行。
 
+**分层可行率证据（可物化子集口径，全 39 场景中的 31 个）**：
+
+{strata_table}
+
+演示口径：低扰动在大型场景响应约 60 秒（用满软预算持续改进），
+演示与宣传必须响应延迟与成本一并呈现，不得只报成本优势。
+
 ## 七、图表（由原始结果程序生成）
 
 {chr(10).join(f'- `{n}`' for n in chart_names)}
 
-## 八、复现命令
+**敏感性口径说明**：raw 中 dev 集的 cap1.05/1.20 行是三次独立求解（候选池
+各自重新搜索），其成本差异属独立运行波动，**不解释为**阈值效应；阈值效应
+证据来自固定候选池实验（同池仅改筛选阈值，随机种子与预算同主评测；
+`scripts/run_sensitivity_fixedpool.py`，结果在 `sensitivity_fixedpool/`）。
+
+## 八、复现命令与证据链
 
 ```bat
 .venv\\Scripts\\python.exe scripts\\run_evaluation.py --split all --copt-diag --overwrite
-.venv\\Scripts\\python.exe scripts\\build_evaluation_report.py
+.venv\\Scripts\\python.exe scripts\\run_sensitivity_fixedpool.py   :: 固定池敏感性（dev）
+.venv\\Scripts\\python.exe scripts\\build_evaluation_report.py     :: 一键重建本报告
 ```
+
+- 本报告由 `build_evaluation_report.py` 从 `raw/*.json` 程序生成，未手改汇总；
+  生成时强制执行清单↔原始结果一致性校验。
+- 证据链：`frozen_manifest.json`（冻结口径）→ `frozen_inputs.json`
+  （每场景草稿 SHA-256/种子/锁比例/依赖版本/提交号）→ 草稿文件
+  （`data/processed/scenarios/<split>/*.json`，随审查包移交）→ `raw/*.json`
+  → `summary.csv` / `reconciliation.csv` → 本报告。
+- **阶段 5 端到端证据**：确认后求解不读旧场景，回归测试
+  `test_confirm_becomes_active_version`、`test_version_drift_fails_honestly`、
+  `test_solve_version_conflict_409`、`test_old_version_export_uses_snapshot`
+  （tests/test_api_stage5.py）随全量 328 passed 通过；评测 runner 不经 API、
+  按冻结草稿确定性物化，每行 scenario_version 落盘。
 
 ## 九、诚实声明
 

@@ -1,0 +1,67 @@
+{
+ "experiment": "sensitivity-fixedpool/1.0",
+ "scenario_id": "r201-s101",
+ "split": "dev",
+ "source": "R201",
+ "base_instance": "R201",
+ "seed": 101,
+ "lock_ratio_target": 0.2,
+ "budget_ms": 60000,
+ "caps": [
+  1.05,
+  1.1,
+  1.2
+ ],
+ "git_commit": "9162ab7",
+ "scenario_draft_hash": "906875623a461be6e270b5416ed915377d83bdc628b3b5b7639203fc43ccb64a",
+ "scenario_input_hash": "28ef920ffebb6ae28907bf7cd274dab52c44db7d9d9a72ed8ada04a9711bd624",
+ "n_orders": 18,
+ "reference_runs": {
+  "insert": {
+   "status": "no_feasible_found",
+   "cost_s": null,
+   "validation_ok": false
+  },
+  "rebuild": {
+   "status": "no_feasible_found",
+   "cost_s": null,
+   "validation_ok": false
+  }
+ },
+ "reference_best_cost_s": null,
+ "reference_details": [],
+ "pool": {
+  "n_candidates": 512,
+  "elapsed_ms": 672
+ },
+ "per_cap": {
+  "1.05": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 33592.65,
+   "selected_cost_s": 31993,
+   "pool_best_cost_s": 31993,
+   "vehicle_changes": 2,
+   "adjacency_breaks": 4
+  },
+  "1.1": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 35192.3,
+   "selected_cost_s": 34670,
+   "pool_best_cost_s": 31993,
+   "vehicle_changes": 1,
+   "adjacency_breaks": 2
+  },
+  "1.2": {
+   "selection_status": "selected",
+   "within_cap": true,
+   "allowed_cost_s": 38391.6,
+   "selected_cost_s": 36952,
+   "pool_best_cost_s": 31993,
+   "vehicle_changes": 0,
+   "adjacency_breaks": 2
+  }
+ },
+ "elapsed_total_ms": 719
+}
