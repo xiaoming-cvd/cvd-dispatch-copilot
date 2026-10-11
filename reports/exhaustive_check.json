@@ -1,4 +1,11 @@
 {
+  "backend_verified": {
+    "backend": [
+      "copt",
+      "copt"
+    ],
+    "solver_version": "stage2-copt-8.0.6"
+  },
   "R01_closed_loop": {
     "exhaustive_optimal": 5,
     "solver_status": "feasible",

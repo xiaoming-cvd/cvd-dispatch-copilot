@@ -16,7 +16,7 @@
 | depot_node_id | str | 仓库节点 |
 | orders[] | | 订单：order_id、node_id、demand、ready_s、due_s、service_s、is_new（新任务标记，不得出现在原计划） |
 | vehicles[] | | 车辆：vehicle_id、capacity、available_from_s、return_by_s |
-| travel_matrix | [[num]] | 完整方阵、对角 0、元素有限非负；非对角 0 视为缺边，首版拒绝 |
+| travel_matrix | [[num]] | 完整方阵、对角 0、元素有限非负；非对角 0 是合法行驶时间（同址/取整），缺边必须显式 null 表达、首版拒绝（与 `src/domain/models.py` 一致） |
 | locks | | assignment_locks（换车锁）/ relative_order_locks（相对顺序锁），只作用于旧任务 |
 | cost_config | | 成本系数（必须带单位与来源）；无真实单价时以行驶秒为指标 |
 

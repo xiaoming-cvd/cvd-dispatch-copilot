@@ -63,9 +63,27 @@ def main() -> int:
     scn1 = _mk([[0, 1, 2], [1, 0, 2], [3, 2, 0]])
     scn2 = _mk([[0, 1, 1], [1, 0, 1], [1, 1000, 0]])
     ex1, ex2 = brute(scn1), brute(scn2)
-    o1 = solve(scn1, "rebuild", time_limit_ms=5000)
-    o2 = solve(scn2, "rebuild", time_limit_ms=5000)
+    # 审查 P0-1：docstring 声称"COPT rebuild 的目标值必须为 5"，调用就必须
+    # 显式 backend="copt"，并校验结果中的实际后端，防止默认 OR-Tools 冒充。
+    o1 = solve(scn1, "rebuild", time_limit_ms=5000, backend="copt")
+    o2 = solve(scn2, "rebuild", time_limit_ms=5000, backend="copt")
+    backend_ok = all(
+        (o.result.metrics.get("backend") == "copt"
+         or "copt" in o.result.solver_version.lower())
+        for o in (o1, o2))
+    if not backend_ok:
+        print("FAIL: 穷举核对的实际后端不是 COPT（backend="
+              f"{o1.result.metrics.get('backend')}/"
+              f"{o2.result.metrics.get('backend')}，"
+              f"solver_version={o1.result.solver_version}）；"
+              "不得用默认 OR-Tools 结果充当 COPT 证据")
+        return 1
     out = {
+        "backend_verified": {
+            "backend": [o1.result.metrics.get("backend"),
+                        o2.result.metrics.get("backend")],
+            "solver_version": o1.result.solver_version,
+        },
         "R01_closed_loop": {
             "exhaustive_optimal": ex1,
             "solver_status": o1.result.status.value,
@@ -85,7 +103,7 @@ def main() -> int:
     (ROOT / "reports" / "exhaustive_check.json").write_text(
         json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(out, ensure_ascii=False, indent=2))
-    ok = all(v["match"] for v in out.values())
+    ok = all(out[k]["match"] for k in ("R01_closed_loop", "R02_bigM"))
     print("overall:", "pass" if ok else "FAIL")
     return 0 if ok else 1
 

@@ -49,8 +49,10 @@ py -3.12 -m venv .venv
 ## 阶段 5：Web 工作台（启动）
 
 ```bat
-.venv\Scripts\python.exe scripts\serve.py        :: 默认 http://127.0.0.1:8000
+.venv\Scripts\python.exe scripts\serve.py
 ```
+
+（默认 http://127.0.0.1:8000）
 
 - 浏览器打开后：场景列表 → 生成原计划（baseline）→ 约束草案确认 → 求解 → 导出 CSV/JSON。
 - 端点统一 `/api/*`；前端为 `frontend/index.html` 单页（无构建步骤）。
@@ -74,15 +76,20 @@ py -3.12 -m venv .venv
 ## 生成样本与 Schema
 
 ```bat
-.venv\Scripts\python.exe scripts\make_sample.py     :: 生成 data/sample/sample_small.json
-.venv\Scripts\python.exe scripts\export_schema.py   :: 导出 docs/schema/scenario.schema.json
+.venv\Scripts\python.exe scripts\make_sample.py
+.venv\Scripts\python.exe scripts\export_schema.py
 ```
+
+（分别生成 data/sample/sample_small.json 与 docs/schema/scenario.schema.json）
 
 ## 数据契约要点（详见 docs/schema/scenario.schema.json）
 
 - 时间：接口层统一整数秒；`time_origin` 必须带时区；时间窗约束**服务开始时刻**。
 - 容量：单一场景只启用一种容量维度（`load_units` 或 `cm3`）；缺失重量不得填 0 冒充。
-- 出行矩阵：完整方阵、对角为 0、元素有限非负；非对角 0 视为缺边，首版拒绝。
+- 出行矩阵：完整方阵、对角为 0、元素有限非负；**非对角 0 是合法行驶时间**
+  （同址节点/取整后为 0），不得仅凭 0 判作缺边；**缺边必须显式以 null 表达**，
+  首版拒绝（`E_MATRIX_EDGE_MISSING`）。与 `src/domain/models.py` 的
+  `TravelMatrix` 规则一致。
 - 原计划：旧任务恰好出现一次；新任务（`is_new=true`）不得出现；计划冻结后不可覆盖。
 - 锁定：`assignment_locks`（换车锁）与 `relative_order_locks`（相对顺序锁）只作用于旧任务。
 - 成本系数必须带单位与来源；无真实单价时以行驶秒数为优化指标（页面标"模型行驶时间"）。
@@ -116,8 +123,10 @@ py -3.12 -m venv .venv
 **模拟/替代（必须向使用者声明）**：
 - LLM 演示模式为 MockProvider（`LLM_PROVIDER=mock`），不冒充真实模型；
   真实后端为 openai_compatible，密钥只走后端环境变量。
-- 新增订单为按固定种子从公开基准算例合成的插单事件，**不是真实动态
-  订单**（场景 `_meta.event_log` 可查）。
+- 新增任务的来源按数据族区分（以场景 `_meta` 为准）：**Solomon 系 17 份草稿**
+  的新增订单为按固定种子合成的插单事件，**不是真实动态订单**；**Kilby 系
+  22 份草稿**（`synthetic_events=false`）的新增任务按源数据真实 appearing
+  time 划分，是真实基准的动态出现时间，非合成事件（`_meta.event_log` 可查）。
 - 成本为模型行驶秒（抽象成本），**无真实单价，不报人民币节约**；
   页面与报告均标注"模型行驶时间"。
 - 评测为 **60 秒软预算**（求解器软上限，无进程硬截断），不得宣传为

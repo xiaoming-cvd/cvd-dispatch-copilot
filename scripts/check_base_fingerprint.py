@@ -3,6 +3,9 @@
 目的：检查 11 个基础算例中是否存在客户内容高度重合的算例对，
 为"是否按布局分组"提供证据。本脚本只读原始文件，不做任何修改。
 
+退出码：0 = 11 个源文件齐全且完成检查；2 = 源文件缺失（显式跳过，
+调用方须显示"部分验证"而非 PASS）；1 = 文件在但解析/数量异常。
+
 输出 reports/base_fingerprint.json：
 - 每个算例的 sha256（对全部客户行的 坐标/需求/时间窗/服务 规范化序列）
 - 逐对重合度（共同 (坐标,需求) 键占比，Jaccard）
@@ -24,6 +27,13 @@ from src.adapters.solomon import parse_solomon  # noqa: E402
 RAW_DIR = ROOT / "data" / "raw" / "solomon"
 OUT = ROOT / "reports" / "base_fingerprint.json"
 
+# 本评测使用的全部 Solomon 基础算例（与 scenarios 草稿的 base 名一一对应）
+EXPECTED_FILES = [
+    "C101.txt", "C102.txt", "C201.txt", "C202.txt",
+    "R101.txt", "R102.txt", "R201.txt", "R202.txt",
+    "RC101.txt", "RC201.txt", "RC202.txt",
+]
+
 
 def fingerprint(inst) -> tuple[str, list[tuple]]:
     """规范化客户内容 → (整体 sha256, (坐标,需求) 键集合)。"""
@@ -35,7 +45,21 @@ def fingerprint(inst) -> tuple[str, list[tuple]]:
     return hashlib.sha256(raw.encode()).hexdigest(), keys
 
 
-def main() -> None:
+def main() -> int:
+    # 审查 P0-2：空目录/缺源文件不得静默产出"算例数 0"再被当作 PASS。
+    missing = [f for f in EXPECTED_FILES if not (RAW_DIR / f).is_file()]
+    present = sorted(p.name for p in RAW_DIR.glob("*.txt"))
+    if missing:
+        print(f"SKIPPED_NO_SOURCE: 缺 {len(missing)}/{len(EXPECTED_FILES)} 个源文件: "
+              f"{missing}")
+        print("提示：可先运行 scripts/download_solomon.py 获取原始算例；"
+              "下载失败不得静默降级为 0 算例通过。")
+        return 2
+    if len(present) != len(EXPECTED_FILES):
+        print(f"源文件数量异常：期望 {len(EXPECTED_FILES)}，实际 {len(present)}: "
+              f"{present}")
+        return 1
+
     per = {}
     for f in sorted(RAW_DIR.glob("*.txt")):
         inst = parse_solomon(f.read_text(encoding="utf-8"))
@@ -70,7 +94,8 @@ def main() -> None:
     print(f"算例数 {len(per)}，高重合对 {len(flagged)}")
     for p in pairs:
         print(f"  {p['pair'][0]:6s} vs {p['pair'][1]:6s}  J={p['jaccard_xy_demand']:.3f}  {p['flag']}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

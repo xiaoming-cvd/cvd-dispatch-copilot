@@ -3,7 +3,7 @@
 用法（Windows）：
     .venv\\Scripts\\python.exe scripts\\solve_cli.py --input <文件> --method insert|rebuild|low_disruption
         [--time-limit-ms 10000] [--out <结果文件>] [--lock-ratio 0.2] [--lock-seed 0]
-        [--write-scenario <场景文件>]
+        [--write-scenario <场景文件>] [--backend ortools|copt]
 
 输入文件两种形态（由 JSON 顶层键自动识别）：
 - "scenario"：完整场景，直接求解；
@@ -54,6 +54,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--input", required=True, type=Path)
     ap.add_argument("--method", required=True,
                     choices=["insert", "rebuild", "low_disruption"])
+    ap.add_argument("--backend", default=None, choices=["ortools", "copt"],
+                    help="仅 rebuild 生效：重排后端（默认 None → rebuild.BACKEND，"
+                         "当前为 ortools）；显式 copt 需本机装有 COPT 许可，"
+                         "不可用时报错而非静默回退")
     ap.add_argument("--time-limit-ms", type=int, default=10_000)
     ap.add_argument("--cost-cap-ratio", type=float, default=None,
                     help="low_disruption 成本上限比例（0.5–2.0，默认 1.10）")
@@ -100,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
                 ensure_ascii=False, indent=2), encoding="utf-8")
 
     outcome = solve(scn, args.method, time_limit_ms=args.time_limit_ms,
-                    cost_cap_ratio=args.cost_cap_ratio)
+                    cost_cap_ratio=args.cost_cap_ratio, backend=args.backend)
     payload = outcome.result.model_dump(mode="json")
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     if args.out:

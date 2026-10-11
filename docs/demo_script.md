@@ -1,7 +1,11 @@
 # 演示脚本（阶段 7 交付，可照抄复现）
 
 演示主线：小样本闭环（5 分钟）→ 工作台 Web 演示（10 分钟）→
-评测结果复现（可选，大场景耗时）。所有命令在 Windows Git Bash/CMD 均可。
+评测结果复现（可选，大场景耗时）。
+
+**以下命令均为 Windows CMD（或 PowerShell）语法，已在 CMD 实跑验证。**
+反斜杠路径与 `copy` 命令在 Git Bash 中不可用；Git Bash 用户请改用正斜杠路径
+与 `cp`。代码块内不含注释行，注释一律写在块外，可直接整块照抄。
 
 ## 0. 环境（一次性）
 
@@ -9,8 +13,10 @@
 cd 城配调度副驾
 py -3.12 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
-copy .env.example .env   :: 演示保持 LLM_PROVIDER=mock
+copy .env.example .env
 ```
+
+（演示保持 `.env` 中 `LLM_PROVIDER=mock`。）
 
 ## 1. 小样本算法闭环（CLI，约 1 分钟）
 
@@ -38,8 +44,10 @@ copy .env.example .env   :: 演示保持 LLM_PROVIDER=mock
 ## 3. Web 工作台（约 5 分钟）
 
 ```bat
-.venv\Scripts\python.exe scripts\serve.py    :: http://127.0.0.1:8000
+.venv\Scripts\python.exe scripts\serve.py
 ```
+
+（启动后访问 http://127.0.0.1:8000。）
 
 浏览器操作主线：场景列表 → 上传/选择草稿 → 生成原计划（baseline）
 → 约束草案确认（默认不勾，需显式 accept）→ 求解（进度可见，60s 预算）

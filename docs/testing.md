@@ -3,10 +3,14 @@
 ## 运行方式
 
 ```bat
-.venv\Scripts\python.exe -m pytest           :: 全量（当前 332 条）
-.venv\Scripts\python.exe scripts\review_check.py            :: 审查模式（有 COPT）
-.venv\Scripts\python.exe scripts\review_check.py --skip-copt  :: 无 COPT 模式
+.venv\Scripts\python.exe -m pytest
+.venv\Scripts\python.exe scripts\review_check.py
+.venv\Scripts\python.exe scripts\review_check.py --skip-copt
 ```
+
+（依次：全量测试；审查模式（有 COPT，含显式 rebuild copt 冒烟与后端校验）；
+无 COPT 模式（rebuild 默认 OR-Tools 冒烟仍会运行）。两种模式退出码 0 才为
+全量 pass；任一环节显式跳过（退出码 2）时 overall 显示 partial 而非 pass。）
 
 ## 覆盖范围（tests/）
 

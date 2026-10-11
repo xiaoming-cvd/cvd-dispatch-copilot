@@ -1,5 +1,13 @@
 # docs/handoff.md — 阶段交接记录
 
+> **随包性说明（阶段 7 审查修正）**：本文件是跨阶段开发记录，引用的
+> `reports/stage*_pytest_log.txt`、`reports/stage*_demo_*.json`、
+> `reports/snapshot_*.zip` 等阶段过程日志为**历史开发机证据，不在交付包内**
+> （交付包所含 reports 子集以 [delivery_checklist](delivery_checklist.md)
+> 第三节为准）；文中测试基线数字以本包 `docs/testing.md` 与
+> `scripts/review_check.py` 实跑结果为准。提交历史可用包内
+> `城配调度副驾.bundle`（git bundle）完整核验。
+
 ## 当前状态：阶段 1 ✅ · 阶段 2 ✅ · 阶段 3 ✅ v2 复审修复完成（待总工复审）· 阶段 4 ✅ v2 复审修复完成（待验收）· 阶段 5 ✅ 复审修复完成（待验收）· 阶段 6 ✅ 冻结评测 39 场景跑完（待验收）（2026-10-11）
 
 > **阶段 4 v2（第四阶段跨电脑复审，2026-10-11）**：复审结论"有条件通过代码骨架"。
@@ -87,10 +95,13 @@ cd C:\Users\tianj\Desktop\城配调度副驾
 .venv\Scripts\python.exe scripts\export_schema.py
 .venv\Scripts\python.exe scripts\build_manifest.py
 .venv\Scripts\python.exe scripts\build_scenarios.py
-.venv\Scripts\python.exe scripts\solve_cli.py   :: 阶段 2 CLI
-.venv\Scripts\python.exe scripts\draft_cli.py --input data\sample\sample_small.json --text "o1 不能换车"   :: 阶段 4 草案（演示模式加 set LLM_PROVIDER=mock）
-.venv\Scripts\python.exe scripts\draft_cli.py --input data\sample\sample_small.json --confirm <draft_id>   :: 阶段 4 确认（产生新场景版本）
+.venv\Scripts\python.exe scripts\solve_cli.py
+.venv\Scripts\python.exe scripts\draft_cli.py --input data\sample\sample_small.json --text "o1 不能换车"
+.venv\Scripts\python.exe scripts\draft_cli.py --input data\sample\sample_small.json --confirm <draft_id>
 ```
+
+（依次：阶段 2 CLI；阶段 4 草案（演示模式先 `set LLM_PROVIDER=mock`）；
+阶段 4 确认（产生新场景版本）。）
 
 ## 测试结果
 

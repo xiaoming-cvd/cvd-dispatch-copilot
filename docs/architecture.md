@@ -20,7 +20,7 @@ src/llm/  service.py ── extractor.py（文本→约束草案，schema 限定
         ▼
 src/solver/  pipeline.py（编排：校验→求解→独立复核→SolveResult）
         │      ├─ original.py   原计划生成（OR-Tools，20s 预算）
-        │      ├─ insert.py     插单基线（枚举插入/搬动）
+        │      ├─ insert.py     插单基线（枚举插入，不搬动旧任务）
         │      ├─ rebuild.py    完全重排（默认 OR-Tools；COPT 可选显式指定）
         │      │   ├─ ortools_core.py / copt_core.py（后端隔离，延迟导入）
         │      └─ low_disruption.py  低扰动（候选池生成 + 成本上限筛选）

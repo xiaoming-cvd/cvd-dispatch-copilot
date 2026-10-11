@@ -14,8 +14,14 @@
 
 ## 合成与派生内容（必须向使用者声明）
 
-- **新增订单为合成事件**：按固定种子从基准算例选择已知/新增任务生成的
-  插单事件，不是真实动态订单；每场景 `_meta.event_log` 记录种子与选择。
+- **新增任务的来源按数据族区分**（以各草稿 `_meta` 为准，可用程序核验）：
+  - **Solomon 系 17 份草稿**：`synthetic_events=true`，新增订单为合成事件——
+    按固定种子从基准算例选择已知/新增任务生成的插单事件，不是真实动态订单；
+    每场景 `_meta.event_log` 记录种子与选择。
+  - **Kilby 系 22 份草稿**：`synthetic_events=false`、`dynamic_source="kilby"`，
+    新增任务按源数据的真实 appearing time 划分（cutoff=0.5 划旧/新），
+    **不是合成事件**，是真实基准的动态出现时间；转换说明见
+    `reports/kilby_data_quality.md`。
 - 成本为模型行驶秒（抽象成本），无真实单价，不报人民币节约。
 - 演示 LLM 为 MockProvider，不冒充真实模型。
 
