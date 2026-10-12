@@ -1,0 +1,47 @@
+{
+ "generated_from": "reports/baseline300/results.json",
+ "diagnostic": "baseline 300 秒预算诊断（独立成表，非 60 秒主评测口径）",
+ "reason_common": "初解构造失败：时间窗过紧。300 秒预算仍在毫秒级失败，与预算大小无关；6 种首解策略 x 8 场景扫描全部失败（服务 0 单）；放宽时间窗探针秒得 ROUTING_OPTIMAL。证据见 reports/baseline300/",
+ "scenarios": {
+  "c101-s102": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 61,
+   "budget_ms": 300000
+  },
+  "c102-s102": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 0,
+   "budget_ms": 300000
+  },
+  "r101-s101": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 15,
+   "budget_ms": 300000
+  },
+  "r101-s102": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 0,
+   "budget_ms": 300000
+  },
+  "r102-s101": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 92,
+   "budget_ms": 300000
+  },
+  "r102-s102": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 16,
+   "budget_ms": 300000
+  },
+  "r201-s102": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 15,
+   "budget_ms": 300000
+  },
+  "rc101-s201": {
+   "status": "TIMEOUT_NO_SOLUTION",
+   "elapsed_ms": 0,
+   "budget_ms": 300000
+  }
+ }
+}

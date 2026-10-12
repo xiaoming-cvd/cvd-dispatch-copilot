@@ -41,6 +41,10 @@ OUT_DIR = ROOT / "reports" / "baseline300"
 RESULTS = OUT_DIR / "results.json"
 SUMMARY = OUT_DIR / "summary.csv"
 REPORT = OUT_DIR / "diagnostic_report.md"
+# 基线不可行索引：场景列表据此把"待 baseline"显示为"基线不可行·时间窗过紧"，
+# 与 /api/scenarios 的读取路径（settings.materialized_dir.parent）保持一致
+FAILURES = (ROOT / "data" / "processed" / "scenarios"
+            / "baseline_failures.json")
 
 
 def _load_results() -> dict:
@@ -100,6 +104,28 @@ def _write_summary_and_report(results: dict) -> None:
               "续跑复现；保存的物化场景在 `data/processed/scenarios/"
               "_materialized/<sid>.json`（v1，300s 诊断口径生成）。"]
     REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_failures_index(results: dict) -> None:
+    """基线不可行索引：供场景列表区分"待 baseline"（没跑）与
+    "基线不可行"（已诊断：时间窗过紧，与预算无关）。"""
+    fails = {sid: {"status": r["status"], "elapsed_ms": r["elapsed_ms"],
+                   "budget_ms": r["budget_ms"]}
+             for sid, r in results["scenarios"].items()
+             if r["status"] != "FOUND"}
+    out = {
+        "generated_from": "reports/baseline300/results.json",
+        "diagnostic": "baseline 300 秒预算诊断（独立成表，非 60 秒主评测口径）",
+        "reason_common": (
+            "初解构造失败：时间窗过紧。加大预算仍在毫秒级失败，与预算大小无关；"
+            "6 种首解策略扫描全部失败（服务 0 单）；放宽时间窗探针秒得"
+            " ROUTING_OPTIMAL。证据见 reports/baseline300/"),
+        "scenarios": fails,
+    }
+    FAILURES.parent.mkdir(parents=True, exist_ok=True)
+    FAILURES.write_text(json.dumps(out, ensure_ascii=False, indent=1),
+                        encoding="utf-8")
+    print(f"基线不可行索引 -> {FAILURES}（{len(fails)} 个场景）")
 
 
 def main() -> int:
@@ -185,6 +211,7 @@ def main() -> int:
         _save(results)  # 每场景落盘，断点可续
 
     _write_summary_and_report(results)
+    _write_failures_index(results)
     done = results["scenarios"]
     print(f"\n汇总：FOUND {sum(1 for r in done.values() if r['status'] == 'FOUND')}"
           f" · TIMEOUT {sum(1 for r in done.values() if r['status'] == 'TIMEOUT_NO_SOLUTION')}"

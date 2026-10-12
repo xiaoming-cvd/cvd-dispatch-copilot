@@ -1,6 +1,6 @@
 # 阶段 6 评测报告（60 秒软预算版）
 
-- 生成时间：2026-10-11T16:43:09
+- 生成时间：2026-10-12T14:48:22
 - 冻结清单：`frozen_manifest.json`（开跑前写入，含划分/种子/配置/预算）
 - 原始结果：`raw/*.json`（每场景输入哈希/状态/指标/异常/分项耗时）+ `summary.csv`
 - **样本口径（修正）**：清单共 39 场景 = dev 23 + test 16，
@@ -22,9 +22,12 @@
 
 ## 〇、分母核对与物化失败场景清单
 
-**物化失败 8 场景**（构建"原计划"的独立 20 秒预算耗尽，
-E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败，更**不是**
-场景不可行的证明；该阶段失败场景不进入方法级比较，但保留在分母中）：
+**物化失败 8 场景**（构建"原计划"未找到可行解
+E_PLAN_NOT_FOUND——原表述"独立 20 秒预算耗尽"**有误，已修正**：后续
+300 秒诊断（独立成表，见 `reports/baseline300/`）证实为**初解构造失败
+（时间窗过紧）**，300 秒预算下仍在 0~92 毫秒内失败，**与预算大小无关**；
+也不是场景不可行的证明。该失败发生在三方法比较之前，**不是**三方法失败；
+该阶段失败场景不进入方法级比较，但保留在分母中）：
 
 | 场景 | 分组 | 订单数 | 物化失败原因（原始记录） |
 |---|---|---|---|
@@ -111,7 +114,7 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 | rebuild OR-Tools | 5/16（31%） | 5/15（33%） |
 | low_disruption(1.10) | 15/16（94%） | 15/15（100%） |
 
-**失败分布**：{'insert:feasible': 4, 'rebuild:no_feasible_found': 10, 'low_disruption:feasible': 15, 'rebuild:feasible': 5, 'insert:no_feasible_found': 11, '原计划物化超时(≠无解)': 1}
+**失败分布**：{'insert:feasible': 4, 'rebuild:no_feasible_found': 10, 'low_disruption:feasible': 15, 'rebuild:feasible': 5, 'insert:no_feasible_found': 11, '原计划物化失败(初解构造失败,≠不可行)': 1}
 
 ## 二、开发集（dev，定参数用；含 COPT 诊断与敏感性，n=23，其中物化失败 7 个）
 
@@ -142,7 +145,7 @@ E_PLAN_NOT_FOUND——发生在三方法比较之前，**不是**三方法失败
 | r202-s102 | 17 | 预算内未找到解(≠不可行) / —s / 0ms | 预算内未找到解(≠不可行) / —s / 3687ms | 预算内未找到解(≠不可行) / —s / 30ms | 29125 |
 
 **可行率（双口径）**：insert 冻结集 3/23（13%） / 可物化 3/16（19%）；rebuild OR-Tools 冻结集 3/23（13%） / 可物化 3/16（19%）；low_disruption 冻结集 15/23（65%） / 可物化 15/16（94%）
-**失败分布**：{'insert:feasible': 3, 'rebuild:feasible': 3, 'low_disruption:feasible': 15, '原计划物化超时(≠无解)': 7, 'insert:no_feasible_found': 13, 'rebuild:no_feasible_found': 13, 'low_disruption:no_feasible_found': 1}
+**失败分布**：{'insert:feasible': 3, 'rebuild:feasible': 3, 'low_disruption:feasible': 15, '原计划物化失败(初解构造失败,≠不可行)': 7, 'insert:no_feasible_found': 13, 'rebuild:no_feasible_found': 13, 'low_disruption:no_feasible_found': 1}
 
 ## 三、配对比较（注明样本占比，单位：模型行驶秒）
 
@@ -222,8 +225,10 @@ OR-Tools 可行解不得写成已证明最优（上表成本差即为证据之�
 - **NO_FEASIBLE_FOUND 语义**：毫秒级返回表示该算法快速判定无可行解，
   **不是**问题不可行（仅 COPT proven_infeasible 可称不可行，如 r202-s102）。
 - **算法改进列为后续工作**：insert/rebuild 在大规模与紧时间窗场景的能力
-  提升、60 秒硬截止机制、300 秒 COPT 诊断（预先指定 3 个代表性 dev 大场景、
-  单独成表，不碰 test 集、不并入主比较）——均未在本轮执行。
+  提升、60 秒硬截止机制——均未在本轮执行。300 秒诊断已执行一项：**baseline
+  物化 300 秒诊断**（8 个失败场景，`reports/baseline300/` 独立成表，不并入
+  主比较），证实失败根因为时间窗过紧而非预算；**COPT 300 秒诊断**（预先指定
+  3 个代表性 dev 大场景、单独成表）未执行。
 
 **分层可行率证据（可物化子集口径，全 39 场景中的 31 个）**：
 

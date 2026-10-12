@@ -57,6 +57,12 @@ REPORTS_FILES = [
     "reports/stage7_clean_env_log.txt",
     "reports/stage7_cmd_smoke.json",
     "reports/verify_empty_dir_log.txt",
+    # baseline 300 秒诊断（独立成表）：修正后评测报告〇节引用其为
+    # "初解构造失败（时间窗过紧）"表述的证据，必须随包可溯源
+    "reports/baseline300/diagnostic_report.md",
+    "reports/baseline300/results.json",
+    "reports/baseline300/strategy_sweep.json",
+    "reports/baseline300/summary.csv",
 ]
 
 # 高置信敏感模式：命中即拒绝打包（允许文档中出现 "api_key" 等单词，

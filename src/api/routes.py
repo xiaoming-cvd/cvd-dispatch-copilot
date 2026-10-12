@@ -196,9 +196,21 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
     @router.get("/scenarios")
     def scenarios():
         out = index.list()
+        # 基线不可行索引（diag_baseline_300s.py 落盘）：区分"待 baseline"（未跑）
+        # 与"基线不可行"（已诊断：初解构造失败/时间窗过紧，与预算无关）
+        fails = {}
+        fp = settings.materialized_dir.parent / "baseline_failures.json"
+        if fp.is_file():
+            try:
+                fails = (json.loads(fp.read_text(encoding="utf-8"))
+                         .get("scenarios", {}))
+            except (OSError, json.JSONDecodeError):
+                fails = {}
         # 原计划参考成本：已物化场景逐路线独立重算（毫秒级，供列表"事前参考"列）
         for row in out:
             row["plan_total_travel_time_s"] = None
+            if not row.get("materialized") and row["scenario_id"] in fails:
+                row["baseline_failed"] = True
             if row.get("materialized"):
                 try:
                     scn = index.load_scenario(row["scenario_id"])
