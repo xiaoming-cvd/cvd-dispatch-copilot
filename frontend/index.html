@@ -367,9 +367,9 @@ async function loadScenarios() {
       td(tr, (s.source || "?") + (s.uploaded ? "（上传）" : ""));
       if (s.baseline_failed) {
         // 已诊断不可行（300s 诊断：初解构造失败/时间窗过紧，与预算无关），
-        // 与"待 baseline"（尚未生成）区分，避免用户反复点击重试
-        td(tr, "基线不可行·时间窗过紧", "st-err");
-        td(tr, "—（无基线）", "muted");
+        // 与"待 baseline"（尚未生成）区分；黄色提示即可，不吓人
+        td(tr, "基线暂不可行", "st-warn");
+        td(tr, "—", "muted");
       } else {
         td(tr, s.materialized ? "已生成" : "待 baseline",
            s.materialized ? "st-ok" : "st-warn");
