@@ -1,0 +1,306 @@
+{
+ "c101-s102": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 63,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "c102-s102": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15015,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "r101-s101": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 16,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 14,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15016,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "r101-s102": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 14,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 16,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 1796,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 3328,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "r102-s101": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 140,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 109,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 125,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 125,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "r102-s102": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 14,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 16,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15015,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "r201-s102": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 15,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 16,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 5311,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 5484,
+   "served": 0,
+   "of": 15
+  }
+ },
+ "rc101-s201": {
+  "PARALLEL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 16,
+   "served": 0,
+   "of": 15
+  },
+  "SEQUENTIAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "LOCAL_CHEAPEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 14,
+   "served": 0,
+   "of": 15
+  },
+  "BEST_INSERTION": {
+   "status": "ROUTING_FAIL",
+   "elapsed_ms": 0,
+   "served": 0,
+   "of": 15
+  },
+  "AUTOMATIC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  },
+  "PATH_MOST_CONSTRAINED_ARC": {
+   "status": "ROUTING_FAIL_TIMEOUT",
+   "elapsed_ms": 15000,
+   "served": 0,
+   "of": 15
+  }
+ }
+}

@@ -41,6 +41,11 @@ class OrtoolsOutcome:
     status_detail: str = ""      # 求解器原生状态值，原样记录
 
 
+# 首解策略（模块级常量，便于诊断脚本对比替换；产品默认值勿改）
+FIRST_SOLUTION_STRATEGY = (
+    routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION)
+
+
 def solve_vrptw(
     scn: Scenario,
     order_ids: list[str],
@@ -111,9 +116,10 @@ def solve_vrptw(
     params = pywrapcp.DefaultRoutingSearchParameters()
     params.time_limit.FromMilliseconds(time_limit_ms)
     # PATH_CHEAPEST_ARC 在"固定出发时刻"模型下无法构造初解（实测 15 节点即超时），
-    # PARALLEL_CHEAPEST_INSERTION 可秒解同规模问题
-    params.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION)
+    # PARALLEL_CHEAPEST_INSERTION 可秒解同规模问题。
+    # 提取为模块常量：紧窗实例上该策略可能连初解都构造不出（秒级 FAIL），
+    # 诊断脚本可 monkeypatch 对比其他首解策略，产品默认值不变。
+    params.first_solution_strategy = FIRST_SOLUTION_STRATEGY
     params.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
     params.log_search = False
