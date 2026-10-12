@@ -50,14 +50,63 @@
   pre { background:#f6f8fa; border:1px solid var(--line); border-radius:5px;
         padding:8px; overflow:auto; font-size:12px; }
   .job-err { color:var(--err); font-size:12px; }
+  .tplbar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .tplbar button { background:#fff; color:var(--pri); border:1px solid var(--pri); }
+  .modal-mask { position:fixed; inset:0; background:rgba(23,32,43,.45);
+                display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal { background:#fff; border-radius:8px; padding:16px 18px; width:560px;
+           max-height:80vh; overflow:auto; }
+  .modal h3 { margin:0 0 6px; font-size:15px; }
+  .pickgroup { margin:10px 0 4px; font-size:12px; color:var(--mut); }
+  .pickrow { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .pick { border:1px solid var(--line); background:#eef1f4; color:var(--ink);
+          border-radius:10px; padding:2px 10px; font-size:12px; cursor:pointer; }
+  .pick.on { background:var(--pri); color:#fff; border-color:var(--pri); }
+  .pick.new { background:#fff3cd; color:#7a5b00; }
+  .pick.new.on { background:#d4a017; color:#fff; }
+  .pill.moved { background:#ffebe9; color:#a40e26; }
+  .pill.reseq { background:#ddf4ff; color:#0969da; }
+  .legend { font-size:12px; color:var(--mut); margin:4px 0 8px; }
+  .legend .pill { margin-right:4px; }
+  .procbox { border:1px solid var(--line); border-radius:6px; padding:10px 12px;
+             margin-bottom:10px; font-size:13px; }
+  .procbox h4 { margin:0 0 6px; font-size:13px; }
+  .flowrow { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+             padding:6px 0; border-bottom:1px dashed var(--line); }
+  .flowrow .vid { min-width:36px; font-weight:600; }
+  .arrow { color:var(--mut); }
 </style>
 </head>
 <body>
 <header>
-  <h1>城配调度副驾 <span class="tag">阶段 5 · Web 工作台</span></h1>
+  <h1>城配调度副驾 <span class="tag">阶段 5 · Web 工作台</span>
+    <button class="ghost sm" id="btnMode" style="margin-left:16px;font-weight:normal">选择使用模式</button>
+  </h1>
   <div class="notice">本页所有线路均为调度示意图，非导航线路，请勿据此驾驶。所有结果须经人工复核后方可执行。</div>
+  <div class="notice hidden" id="modeNotice"></div>
   <div class="notice" id="llmNotice"></div>
 </header>
+<div class="modal-mask hidden" id="modeGate">
+  <div class="modal" style="max-width:660px">
+    <h3>选择使用模式</h3>
+    <div class="muted" style="margin-bottom:12px">两种模式读取<strong>完全相同</strong>的数据与求解结果，只是呈现方式不同；
+      之后可随时在页头一键切换，选择只记忆在本机浏览器。</div>
+    <div style="display:flex;gap:12px;align-items:stretch">
+      <div class="card modecard" id="gateLayman" style="flex:1;cursor:pointer;margin:0">
+        <h4 style="margin-top:0">通俗演示版</h4>
+        <div class="muted">大白话解释决策过程、演示化站点/车辆称谓、图示对照。
+          适合第一次接触本系统的评委、参观者。</div>
+      </div>
+      <div class="card modecard" id="gatePro" style="flex:1;cursor:pointer;margin:0">
+        <h4 style="margin-top:0">专业审查版</h4>
+        <div class="muted">原始订单/车辆 ID、诊断 JSON、候选明细与溯源信息。
+          适合评测、审查与工程对接。</div>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:10px">通俗演示版中的分组/站点/车辆称谓均为确定性演示化名，
+      不代表实际地理、客户、人员或业务含义。</div>
+  </div>
+</div>
 <main>
   <!-- ================= 左栏 ================= -->
   <section>
@@ -96,6 +145,7 @@
 
     <div class="card hidden" id="cardConstraints">
       <h2>2 · 变更约束（自然语言 → 草案）</h2>
+      <div class="tplbar" id="tplBar"></div>
       <div class="muted" id="demoNotice"></div>
       <textarea id="constraintText" placeholder="例：把订单 o7 改到明天上午，车辆 V2 下午不可用…"></textarea>
       <button id="btnDraft">生成草案</button>
@@ -121,6 +171,7 @@
         <label class="muted">乐观锁版本（可选）</label>
         <input type="number" id="solveBaseVersion" placeholder="留空跳过" style="width:110px">
         <button id="btnSolve">提交求解任务</button>
+        <button class="ghost" id="btnSolveAll" title="依次提交 insert / rebuild(OR-Tools) / low_disruption，预算与版本快照完全一致">一键三方法（同口径）</button>
       </div>
       <div class="muted">正式评测口径：三方法统一 60 秒端到端预算。COPT 超时记为
         TIMEOUT_NO_SOLUTION（≠不可行）；OR-Tools 可行解≠已证明最优；实际后端逐条记录在结果中。</div>
@@ -138,18 +189,22 @@
 
     <div class="card hidden" id="cardResult">
       <h2>结果</h2>
+      <div class="notice hidden" id="laymanIntro"></div>
       <dl class="kv" id="resultKv"></dl>
       <div class="row" style="margin:8px 0">
         <button class="ghost sm" id="btnExportCsv">导出 CSV</button>
         <button class="ghost sm" id="btnExportJson">导出 JSON</button>
+        <button class="ghost sm" id="btnExportNames" title="通俗演示版称谓 ↔ 原始 ID 的对照，供审查核对翻译忠实性">导出演示称谓对照表</button>
         <span class="muted" id="exportMsg"></span>
       </div>
-      <h2 style="margin-top:14px">原计划 vs 新计划</h2>
-      <div class="muted">黄色 = 新插入/变更任务</div>
-      <table id="tblCompare">
-        <thead><tr><th>车辆</th><th>原计划顺序</th><th>新计划顺序</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <h2 style="margin-top:14px">原计划 → 新计划 · 顺序图</h2>
+      <div class="legend">
+        <span class="pill new">真正新增订单</span>
+        <span class="pill moved">旧订单换车</span>
+        <span class="pill reseq">仅顺序变化</span>
+        <span class="muted">（对照基准：该任务求解时的原计划快照）</span>
+      </div>
+      <div id="compareFlow"></div>
       <h2 style="margin-top:14px">时刻表</h2>
       <table id="tblTimetable">
         <thead><tr><th>车辆</th><th>订单</th><th>到达 s</th><th>等待 s</th>
@@ -158,6 +213,26 @@
       </table>
       <h2 style="margin-top:14px">求解器自报指标（仅供对照，以独立校验为准）</h2>
       <pre id="metricsPre"></pre>
+      <h2 style="margin-top:14px">决策过程（事后回放 · 全部由真实运行记录生成，无大模型编造）</h2>
+      <div class="procbox" id="storyBox"><h4>大白话：它到底干了什么</h4><div id="procStory"></div>
+        <div id="procViz" style="margin-top:10px"></div></div>
+      <div class="procbox"><h4>结论（口径与状态）</h4><div id="procSummary"></div></div>
+      <div class="procbox"><h4>方法与候选明细（专业审查用）</h4>
+        <details><summary>展开专业明细</summary><div id="procMethod"></div></details>
+      </div>
+      <div class="procbox"><h4>原始记录（审查 / 下载）</h4>
+        <div class="row" style="margin-bottom:6px">
+          <button class="ghost sm" id="btnDownloadJson">下载 result.json</button>
+          <span class="muted">过程记录为结果生成时的一次性快照，数量设有上限，不含任何凭证。</span>
+        </div>
+        <details><summary>展开诊断 JSON</summary><pre id="procJson"></pre></details>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cardCompare">
+      <h2>三方法比较（仅同版本 · 同输入哈希 · 同请求预算）</h2>
+      <div class="muted">先比是否可行，再比行驶时间与扰动；单位均为模型行驶秒（抽象成本，非人民币）。</div>
+      <div id="compareBox"></div>
     </div>
 
     <div class="card">
@@ -166,6 +241,19 @@
     </div>
   </section>
 </main>
+
+<div class="modal-mask hidden" id="tplModal">
+  <div class="modal">
+    <h3 id="tplTitle">选择订单 / 车辆</h3>
+    <div class="muted" id="tplHint"></div>
+    <div id="tplPickArea"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="tplApply" disabled>填入文本框</button>
+      <button class="ghost" id="tplCancel">取消</button>
+      <span class="muted" id="tplStatus"></span>
+    </div>
+  </div>
+</div>
 <script>
 "use strict";
 /* 约定：所有动态文本一律 textContent，禁止 innerHTML 渲染数据（防 HTML 注入）。 */
@@ -196,6 +284,65 @@ function kv(dl, k, v) {
   const dd = document.createElement("dd");
   if (v instanceof Node) dd.appendChild(v); else dd.textContent = String(v ?? "");
   dl.appendChild(dt); dl.appendChild(dd);
+}
+
+/* ---------- 使用模式与演示称谓（仅呈现层，不改任何数据） ----------
+   通俗演示版：大白话故事 + 演示化名（确定性生成：同一场景同一 ID 永远同名）。
+   专业审查版：原始 ID 直出。两种模式读取同一份结果对象。 */
+const NAMING_ALGO = "layman-naming v1.0 (fnv1a-32, seed=cvd)";
+let curMode = null;          // "layman" | "pro"，首次访问由模式门选择，记忆在 localStorage
+let lastResultData = null;   // 最近一次 result.json，供模式切换后重渲染与对照表导出
+
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i); h = (h * 0x01000193) >>> 0;
+  }
+  return h;
+}
+function demoName(kind, id) {
+  const key = (sel.scenario || "") + "|" + String(id);
+  if (kind === "vehicle") {
+    const n = parseInt(String(id).replace(/\D/g, ""), 10);
+    return (isNaN(n) ? "?" : n) + "号车";
+  }
+  if (kind === "order") {
+    const g = "ABCDEF"[fnv1a(key + "g") % 6];
+    return "演示" + g + "组·站点" + String(fnv1a(key) % 97 + 1).padStart(2, "0");
+  }
+  return String(id);
+}
+/* 展示名：通俗演示版用演示化名，专业审查版用原始 ID */
+function dispName(kind, id) {
+  return curMode === "layman" ? demoName(kind, id) : String(id);
+}
+
+function applyMode() {
+  const layman = curMode === "layman";
+  $("btnMode").textContent = layman
+    ? "当前模式：通俗演示版（点击切换到专业审查版）"
+    : "当前模式：专业审查版（点击切换到通俗演示版）";
+  const notice = $("modeNotice");
+  notice.classList.toggle("hidden", !layman);
+  notice.textContent = layman
+    ? "通俗演示版：页面中的分组/站点/车辆称谓均为确定性演示化名，不代表实际地理、客户、"
+      + "人员或业务含义；鼠标悬停标记可见原始 ID，也可随时切回专业审查版查看原始编号。"
+    : "";
+  const intro = $("laymanIntro");
+  intro.classList.toggle("hidden", !layman);
+  if (layman) {
+    intro.textContent = "通俗演示版已开启：下方用大白话解释这次求解的决策过程；"
+      + "专业明细、原始编号与诊断 JSON 仍在页面下方，随时可查。";
+  }
+  $("storyBox").classList.toggle("hidden", !layman);  // 大白话故事/图示仅通俗演示版展示
+  if (sel.job) loadResult(sel.job);  // 重渲染以套用/去除演示称谓（保留当前场景与任务）
+}
+
+function chooseMode(mode) {
+  curMode = mode;
+  try { localStorage.setItem("cvd_mode", mode); } catch (e) { /* 私密模式等场景忽略 */ }
+  $("modeGate").classList.add("hidden");
+  applyMode();
 }
 
 /* ---------- 场景 ---------- */
@@ -234,6 +381,10 @@ async function selectScenario(sid) {
     kv(dl, "场景", d.scenario_id);
     kv(dl, "订单 / 车辆", d.n_orders + " / " + d.n_vehicles);
     kv(dl, "草稿 input_hash", d.draft_input_hash);
+    if (d.base_instance != null) {
+      kv(dl, "数据基础 / 新增事件来源", d.base_instance
+         + (d.synthetic_events ? "（新增事件为按种子合成的插单）" : "（新增事件来自数据集原始划分）"));
+    }
     if (d.materialized) {
       kv(dl, "已物化版本", "v" + d.version);
       kv(dl, "场景 input_hash", d.input_hash);
@@ -285,6 +436,151 @@ $("btnBaseline").onclick = async () => {
         budget_ms: Number($("baselineBudget").value) || 60000 }) });
     refreshJobs();
   } catch (e) { alert("baseline 提交失败：" + e.message); }
+};
+
+/* ---------- 约束模板 ---------- */
+const TEMPLATES = [
+  { id: "keep", label: "① 某单不换车（锁）", orders: 1, vehicles: 0,
+    hint: "选 1 张订单：锁定在原计划的车上，不许换车",
+    make: (o) => o[0] + " 不能换车" },
+  { id: "assign", label: "② 某单指定车送（锁）", orders: 1, vehicles: 1,
+    hint: "选 1 张订单 + 1 辆车：该单固定由这辆车送",
+    make: (o, v) => o[0] + " 必须由 " + v[0] + " 送" },
+  { id: "order", label: "③ 同车两单先后不动（锁）", orders: 2, vehicles: 1,
+    hint: "选 1 辆车 + 2 张订单：前者永远排在后者前面送",
+    make: (o, v) => v[0] + " 上 " + o[0] + " 要排在 " + o[1] + " 前面" },
+  { id: "soft", label: "④ 尽量不换车（偏好）", orders: 0, vehicles: 0,
+    hint: "", make: () => "老单尽量不换车" },
+];
+let tplSel = { orders: [], vehicles: [] };
+let tplCurrent = null;
+
+function fillConstraint(text) {
+  const ta = $("constraintText");
+  ta.value = ta.value.trim() ? ta.value.trim() + "；" + text : text;
+}
+
+function renderTplBar() {
+  const bar = $("tplBar"); bar.textContent = "";
+  for (const t of TEMPLATES) {
+    const b = document.createElement("button");
+    b.className = "sm"; b.textContent = t.label;
+    b.onclick = () => openTpl(t);
+    bar.appendChild(b);
+  }
+}
+renderTplBar();
+
+async function openTpl(t) {
+  tplCurrent = t;
+  if (!t.orders && !t.vehicles) { fillConstraint(t.make([], [])); return; }
+  if (!sel.scenario) { alert("请先选择场景"); return; }
+  tplSel = { orders: [], vehicles: [] };
+  $("tplTitle").textContent = t.label;
+  $("tplHint").textContent = t.hint;
+  $("tplStatus").textContent = "加载中…";
+  $("tplApply").disabled = true;
+  $("tplPickArea").textContent = "";
+  $("tplModal").classList.remove("hidden");
+  try {
+    const d = await api("/api/scenarios/" + encodeURIComponent(sel.scenario) + "/picker");
+    renderTplPicker(d, t);
+    $("tplStatus").textContent = "";
+  } catch (e) {
+    $("tplStatus").textContent = "加载失败：" + e.message;
+  }
+}
+
+function pickRow(ids, t, isNew) {
+  const row = document.createElement("div"); row.className = "pickrow";
+  for (const oid of ids) {
+    const s = document.createElement("span");
+    s.className = "pick" + (isNew ? " new" : ""); s.textContent = oid;
+    s.onclick = () => togglePick("orders", oid, t);
+    row.appendChild(s);
+  }
+  return row;
+}
+
+function renderTplPicker(d, t) {
+  const area = $("tplPickArea"); area.textContent = "";
+  if (t.vehicles) {
+    const g = document.createElement("div"); g.className = "pickgroup";
+    g.textContent = "选车辆（0/" + t.vehicles + "）";
+    area.appendChild(g);
+    const row = document.createElement("div"); row.className = "pickrow";
+    for (const vid of d.vehicles || []) {
+      const s = document.createElement("span");
+      s.className = "pick"; s.textContent = vid;
+      s.onclick = () => togglePick("vehicles", vid, t);
+      row.appendChild(s);
+    }
+    area.appendChild(row);
+  }
+  if (t.orders) {
+    const grouped = {};
+    const inPlan = new Set();
+    for (const r of d.plan_routes || []) {
+      grouped[r.vehicle_id] = [];
+      for (const oid of r.order_ids) { grouped[r.vehicle_id].push(oid); inPlan.add(oid); }
+    }
+    const g = document.createElement("div"); g.className = "pickgroup";
+    g.textContent = "选订单（0/" + t.orders + "）";
+    area.appendChild(g);
+    for (const vid of Object.keys(grouped)) {
+      const lg = document.createElement("div"); lg.className = "pickgroup";
+      lg.textContent = "原计划 · " + vid + " 的车单";
+      area.appendChild(lg);
+      area.appendChild(pickRow(grouped[vid], t, false));
+    }
+    const rest = (d.orders || []).map(o => o.order_id).filter(oid => !inPlan.has(oid));
+    if (rest.length) {
+      const lg = document.createElement("div"); lg.className = "pickgroup";
+      lg.textContent = "不在原计划中的单（含新插单）";
+      area.appendChild(lg);
+      area.appendChild(pickRow(rest, t, true));
+    }
+  }
+  updateTplStatus(t);
+}
+
+function togglePick(kind, id, t) {
+  const arr = tplSel[kind];
+  const i = arr.indexOf(id);
+  if (i >= 0) arr.splice(i, 1);
+  else { if (arr.length >= t[kind]) arr.shift(); arr.push(id); }
+  const area = $("tplPickArea");
+  area.querySelectorAll(".pick").forEach(p => p.classList.remove("on"));
+  for (const v of tplSel.vehicles) markOn(area, v);
+  for (const o of tplSel.orders) markOn(area, o);
+  const gs = area.querySelectorAll(".pickgroup");
+  if (t.vehicles && gs.length) gs[0].textContent = "选车辆（" + tplSel.vehicles.length + "/" + t.vehicles + "）";
+  if (t.orders) {
+    const gi = t.vehicles ? 1 : 0;
+    if (gs[gi]) gs[gi].textContent = "选订单（" + tplSel.orders.length + "/" + t.orders + "）";
+  }
+  updateTplStatus(t);
+}
+function markOn(area, text) {
+  area.querySelectorAll(".pick").forEach(p => {
+    if (p.textContent === text) p.classList.add("on");
+  });
+}
+function updateTplStatus(t) {
+  const ok = tplSel.orders.length === t.orders && tplSel.vehicles.length === t.vehicles;
+  $("tplApply").disabled = !ok;
+  $("tplStatus").textContent = ok ? "" :
+    "还需选：订单 " + Math.max(0, t.orders - tplSel.orders.length)
+    + " 张、车辆 " + Math.max(0, t.vehicles - tplSel.vehicles.length) + " 辆";
+}
+$("tplApply").onclick = () => {
+  if (!tplCurrent) return;
+  fillConstraint(tplCurrent.make(tplSel.orders, tplSel.vehicles));
+  $("tplModal").classList.add("hidden");
+};
+$("tplCancel").onclick = () => $("tplModal").classList.add("hidden");
+$("tplModal").onclick = (e) => {
+  if (e.target === $("tplModal")) $("tplModal").classList.add("hidden");
 };
 
 /* ---------- 约束草案 ---------- */
@@ -360,13 +656,27 @@ function renderDraft(d) {
     note.textContent = "默认不勾选任何条目；须逐项勾选或显式点击「全部接受」。";
     box.appendChild(note);
   }
+  const fmtNote = {
+    questions: n => "澄清问题：" + (n.question ?? JSON.stringify(n))
+      + (n.source_text ? "（依据原文：“" + n.source_text + "”）" : ""),
+    missing: n => "缺字段：" + (n.description ?? JSON.stringify(n))
+      + (n.source_text ? "（依据原文：“" + n.source_text + "”）" : ""),
+    rejected: n => "已拒绝[" + (n.kind ?? "?") + "]：" + (n.reason ?? JSON.stringify(n))
+      + (n.source_text ? "（依据原文：“" + n.source_text + "”）" : ""),
+  };
   for (const [label, key] of [["问题","questions"],["缺字段","missing"],["已拒绝","rejected"]]) {
     const arr = draft[key] || [];
-    if (arr.length) {
+    for (const n of arr) {
       const p = document.createElement("p"); p.className = "st-warn";
-      p.textContent = label + "：" + arr.join("；"); box.appendChild(p);
+      p.textContent = (typeof n === "string")
+        ? label + "：" + n : fmtNote[key](n);
+      box.appendChild(p);
     }
   }
+  (draft.warnings || []).forEach(w => {
+    const p = document.createElement("p"); p.className = "st-warn";
+    p.textContent = "警告：" + w; box.appendChild(p);
+  });
 }
 
 async function confirmDraft(acceptAll, decisions) {
@@ -405,8 +715,48 @@ $("btnSolve").onclick = async () => {
   } catch (e) { alert("求解提交失败（" + e.status + "）：" + e.message); }
 };
 
+/* 一键三方法：同一次点击内顺序提交，版本快照与预算完全一致（同口径门控） */
+$("btnSolveAll").onclick = async () => {
+  if (!sel.scenario) return;
+  const btn = $("btnSolveAll");
+  const budget = Number($("solveBudget").value) || 60000;
+  const plan = [["insert", null], ["rebuild", "ortools"], ["low_disruption", null]];
+  btn.disabled = true;
+  const submitted = [];
+  try {
+    for (const [method, backend] of plan) {
+      const body = { scenario_id: sel.scenario, method, budget_ms: budget };
+      if (backend) body.backend = backend;
+      try {
+        const r = await api("/api/solve", { method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(body) });
+        submitted.push(method + "→" + r.job_id);
+      } catch (e) {
+        submitted.push(method + " 提交失败（" + (e.status || "?") + "）：" + e.message);
+        break;  // 口径可能被破坏（如版本冲突），中止而非继续
+      }
+    }
+  } finally {
+    btn.disabled = false;
+    refreshJobs();
+    alert("一键三方法提交结果：\n" + submitted.join("\n")
+      + "\n\n三个任务同一版本快照、同一预算；完成后点「三方法比较」看对照。");
+  }
+};
+
 /* ---------- 任务轮询 ---------- */
 let pollTimer = null;
+/* ISO 时间 → 浏览器本地时区显示（后端存 UTC，直接贴出来会差 8 小时） */
+function fmtTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso).replace("T", " ").slice(0, 19);
+  const p = n => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
+    + " " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+
 async function refreshJobs() {
   const tbody = $("tblJobs").querySelector("tbody");
   tbody.textContent = "";
@@ -422,7 +772,7 @@ async function refreshJobs() {
       const stTd = td(tr, j.status,
         j.status === "succeeded" ? "st-ok" : (j.status === "failed" || j.status === "interrupted") ? "st-err" : "st-warn");
       if (j.error && j.status !== "succeeded") stTd.title = j.error;
-      td(tr, (j.created_at || "").replace("T", " ").slice(0, 19));
+      td(tr, fmtTime(j.created_at));
       td(tr, j.error ? "失败：" + j.error : (j.status === "interrupted" ? "服务重启打断" : ""),
          j.error || j.status === "interrupted" ? "job-err" : "muted");
       tr.onclick = () => {
@@ -446,10 +796,16 @@ async function loadResult(jobId) {
   const dl = $("resultKv"); dl.textContent = "";
   try {
     const d = await api("/api/jobs/" + encodeURIComponent(jobId) + "/result.json");
+    lastResultData = d;
     const r = d.result || {};
     const m = r.metrics || {};
     kv(dl, "任务", d.job_id);
     kv(dl, "方法 / 后端（请求）", d.method + " / " + (d.backend_requested || "-"));
+    kv(dl, "数据基础 / 新增事件来源",
+       (d.base_instance != null ? d.base_instance : "?")
+       + (d.synthetic_events != null
+          ? (d.synthetic_events ? "（新增事件为合成插单）" : "（新增事件来自数据集原始划分）")
+          : ""));
     kv(dl, "实际后端", d.backend || "-");
     kv(dl, "版本 / 请求预算", "v" + (d.version ?? "?") + " / " + (d.requested_budget_ms ?? "?") + " ms");
     kv(dl, "有效预算 / 端到端耗时", (d.budget_ms ?? "?") + " ms / " + (d.total_elapsed_ms ?? "?") + " ms"
@@ -469,6 +825,7 @@ async function loadResult(jobId) {
 
     renderCompare(d.original_plan || [], r.routes || []);
     renderTimetable(r.schedule || []);
+    renderProcess(d);
     $("metricsPre").textContent = JSON.stringify(m, null, 2);
     $("btnExportCsv").disabled = !d.executable;
     $("exportMsg").textContent = d.executable
@@ -480,38 +837,631 @@ async function loadResult(jobId) {
   }
 }
 
-function renderCompare(original, routes) {
-  const tbody = $("tblCompare").querySelector("tbody");
-  tbody.textContent = "";
-  const origByV = {}, newIds = new Set(), newByV = {};
-  for (const r of original) origByV[r.vehicle_id] = r.order_ids;
+/* 订单变更三分类（与 src/solver/perturbation.py 同口径）：
+   new = 原计划中不存在（真正新增）；moved = 旧单换车；
+   reseq = 同车仅顺序变化；same = 未变 */
+function classifyOrders(original, routes) {
+  const orig = {};
+  for (const r of original) (r.order_ids || []).forEach((oid, i) => {
+    orig[oid] = { v: r.vehicle_id, idx: i };
+  });
+  const cls = {};
   for (const r of routes) {
-    newByV[r.vehicle_id] = r.order_ids;
-    for (const oid of r.order_ids) {
-      if (!(origByV[r.vehicle_id] || []).includes(oid)) newIds.add(oid);
+    let oldRank = 0;
+    for (const oid of (r.order_ids || [])) {
+      const o = orig[oid];
+      if (!o) { cls[oid] = "new"; continue; }
+      if (o.v !== r.vehicle_id) cls[oid] = "moved";
+      else if (o.idx !== oldRank) cls[oid] = "reseq";
+      else cls[oid] = "same";
+      oldRank++;
     }
   }
+  const val = Object.values(cls);
+  return { orig, cls, counts: {
+    nNew: val.filter(c => c === "new").length,
+    nMoved: val.filter(c => c === "moved").length,
+    nReseq: val.filter(c => c === "reseq").length } };
+}
+
+/* 与 perturbation.measure 同口径的扰动计数（三方法比较表用） */
+function perturbationCounts(original, routes) {
+  const { orig, cls } = classifyOrders(original, routes);
+  const oldIds = new Set(Object.keys(orig));
+  const newByV = {};
+  for (const r of routes) {
+    newByV[r.vehicle_id] = (r.order_ids || []).filter(o => oldIds.has(o));
+  }
+  let breaks = 0;
+  for (const r of original) {
+    const olds = r.order_ids || [];
+    const filtered = newByV[r.vehicle_id] || [];
+    for (let i = 0; i + 1 < olds.length; i++) {
+      let preserved = false;
+      for (let j = 0; j + 1 < filtered.length; j++) {
+        if (filtered[j] === olds[i] && filtered[j + 1] === olds[i + 1]) {
+          preserved = true; break;
+        }
+      }
+      if (!preserved) breaks++;
+    }
+  }
+  return { vehicle_changes: Object.values(cls).filter(c => c === "moved").length,
+           adjacency_breaks: breaks };
+}
+
+function pill(text, cls) {
+  const s = document.createElement("span");
+  s.className = "pill" + (cls ? " " + cls : "");
+  s.textContent = text; s.style.marginRight = "4px";
+  return s;
+}
+function pLine(text, cls) {
+  const p = document.createElement("p");
+  p.style.margin = "4px 0";
+  if (cls) p.className = cls;
+  p.textContent = text;
+  return p;
+}
+
+/* 原计划 → 新计划 · 顺序图（三类标记：新增 / 换车 / 顺序变化） */
+function renderCompare(original, routes) {
+  const box = $("compareFlow"); box.textContent = "";
+  const { cls } = classifyOrders(original, routes);
+  const newByV = {}, origByV = {};
+  for (const r of routes) newByV[r.vehicle_id] = r.order_ids || [];
+  for (const r of original) origByV[r.vehicle_id] = r.order_ids || [];
   const vehicles = [...new Set([...Object.keys(origByV), ...Object.keys(newByV)])];
+  if (!vehicles.length) {
+    const p = document.createElement("div"); p.className = "muted";
+    p.textContent = "无解（或结果为空）"; box.appendChild(p); return;
+  }
   for (const v of vehicles) {
+    const row = document.createElement("div"); row.className = "flowrow";
+    const vid = document.createElement("span"); vid.className = "vid";
+    vid.textContent = dispName("vehicle", v);
+    vid.title = "原始 ID：" + v; row.appendChild(vid);
+    const oSeq = origByV[v] || [];
+    if (oSeq.length) oSeq.forEach(o => {
+      const p = pill(dispName("order", o)); p.title = "原始 ID：" + o; row.appendChild(p);
+    });
+    else row.appendChild(pLine("（原计划未用）", "muted"));
+    const arrow = document.createElement("span");
+    arrow.className = "arrow"; arrow.textContent = "→"; row.appendChild(arrow);
+    const nSeq = newByV[v] || [];
+    if (nSeq.length) nSeq.forEach(o => {
+      const p = pill(dispName("order", o), cls[o] === "same" ? "" : cls[o]);
+      p.title = "原始 ID：" + o; row.appendChild(p);
+    });
+    else row.appendChild(pLine("（不出车）", "muted"));
+    box.appendChild(row);
+  }
+}
+
+/* ---------- 决策过程（事后回放：全部来自真实运行记录，无大模型编造） ---------- */
+function renderProcess(d) {
+  const r = d.result || {};
+  const m = r.metrics || {};
+  const sum = $("procSummary"); sum.textContent = "";
+  const meth = $("procMethod"); meth.textContent = "";
+  const statusTxt = d.has_solution
+    ? ("找到可行解：总行驶时间 " + (m.total_travel_time_s ?? "?")
+       + " 模型秒，独立校验"
+       + ((r.validation && r.validation.independent_ok) ? "通过" : "未通过") + "。")
+    : ("未找到可行解（" + (r.status || "?") + "）——这不等于证明问题无解"
+       + (r.status === "PROVEN_INFEASIBLE"
+          ? "；本次为求解器报告的模型不可行，仅对当前建模有效" : "") + "。");
+  sum.appendChild(pLine("方法 " + d.method + "（后端 " + (d.backend || "-") + "）：" + statusTxt));
+  sum.appendChild(pLine("口径：v" + (d.version ?? "?") + " · 输入哈希 "
+    + String(d.input_hash || "?").slice(0, 12) + "… · 请求预算 "
+    + (d.requested_budget_ms ?? "?") + " ms · 端到端耗时 "
+    + (d.total_elapsed_ms ?? "?") + " ms"
+    + (d.timed_out ? "（已超请求预算，软预算口径）" : "") + "。"));
+  sum.appendChild(pLine("本面板为事后回放：以下记录全部来自该次运行留下的真实诊断数据，"
+    + "未调用大模型解释过程，也未为展示而额外求解一次。"));
+  renderStory(d, r, m);
+  const viz = $("procViz"); viz.textContent = "";
+
+  if (d.method === "insert") renderInsertProc(meth, m, viz);
+  else if (d.method === "rebuild") renderRebuildProc(meth, d, r, m);
+  else if (d.method === "low_disruption") renderLowProc(meth, d, r, m, viz);
+
+  const diag = { job_id: d.job_id, method: d.method,
+    backend_requested: d.backend_requested, backend: d.backend,
+    version: d.version, input_hash: d.input_hash,
+    requested_budget_ms: d.requested_budget_ms, budget_ms: d.budget_ms,
+    total_elapsed_ms: d.total_elapsed_ms, timed_out: d.timed_out,
+    has_solution: d.has_solution, executable: d.executable, result: r };
+  $("procJson").textContent = JSON.stringify(diag, null, 2);
+  $("btnDownloadJson").onclick = () => {
+    const blob = new Blob([JSON.stringify(d, null, 2)],
+      { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = d.job_id + ".result.json";
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+}
+
+/* 大白话决策故事：所有数字来自真实运行记录，措辞为固定模板 */
+function renderStory(d, r, m) {
+  const box = $("procStory"); box.textContent = "";
+  const lines = [];
+  if (d.method === "insert") {
+    const diag = (m.diagnostics || {}).inserted || [];
+    lines.push("这一步只做一件事：把新来的订单塞进现有路线——已经下发的路线一张不动、"
+      + "原有顺序也不变，只有新单找位置。");
+    for (const rec of diag) {
+      if (rec.inserted) {
+        const rb = rec.rejected_by || {};
+        const why = [];
+        if (rb.time_window) why.push(rb.time_window + " 个位置会让某家送货超时");
+        if (rb.capacity) why.push(rb.capacity + " 个位置会让车超载");
+        if (rb.return_late) why.push(rb.return_late + " 个位置会让车回来太晚");
+        lines.push("【" + dispName("order", rec.order_id) + "】试了 "
+          + Object.keys(rec.per_vehicle || {}).length + " 辆车的 " + rec.slots_checked
+          + " 个空位" + (why.length ? "，其中 " + why.join("、") : "")
+          + "；只有 " + dispName("vehicle", rec.vehicle_id) + " 的第 " + (rec.position + 1)
+          + " 个位置合适，代价是多跑 " + rec.travel_delta_s + " 秒。→ 就放这儿。");
+      } else {
+        lines.push("【" + dispName("order", rec.order_id) + "】所有车上都找不到不超时、不超载的位置，"
+          + "这个方法没招了——它不敢动老路线，所以这不是“问题无解”，"
+          + "只是“这个方法解不了”。");
+      }
+    }
+  } else if (d.method === "rebuild") {
+    const locks = d.locks || {};
+    const nLock = Object.keys(locks.assignment_locks || {}).length
+      + (locks.relative_order_locks || []).length;
+    const { counts } = classifyOrders(d.original_plan || [], r.routes || []);
+    lines.push("这个方法把今天的单子全部推倒重排——像重新洗一副牌，"
+      + "从仓库出发把每张单重新分给每辆车。");
+    lines.push("唯一不许动的：" + (nLock
+      ? "被人工锁定的 " + nLock + " 张单（人已经答应客户的，必须算数）。"
+      : "没有锁定单，全部重新安排。"));
+    if (d.has_solution) {
+      lines.push("排完了：新增 " + counts.nNew + " 张落位，" + counts.nMoved
+        + " 张老单换了车，" + counts.nReseq + " 张顺序变了；总行驶 "
+        + (m.total_travel_time_s ?? "?") + " 秒。");
+      lines.push("由求解器 " + (d.backend || "?") + " 算出（状态 "
+        + (m.solver_status || r.status || "?") + "）。注意：找到可行解 "
+        + "≠ 数学证明最优。");
+    } else {
+      lines.push("这次在预算内没有排出可行方案（状态 " + (r.status || "?")
+        + "）——这不等于证明问题无解，可以加大预算或更换后端再试。");
+    }
+  } else if (d.method === "low_disruption") {
+    const sel = m.selection || {};
+    lines.push("这个方法像“在老计划旁边打补丁”：先试完全不动老路线的插法；"
+      + "插不进去，再试着挪一张老单腾地方，一圈圈试出所有不违反硬规矩"
+      + "（时间窗、载重、锁定）的方案。");
+    lines.push("一共收集到 " + (m.candidate_count ?? "?") + " 个备选方案；"
+      + "搜到停不下来时会主动收手（本次停止原因："
+      + (m.search_stop_reason || "?") + "）。");
+    if (sel.cost_cap_s != null) {
+      lines.push("挑方案的红线：总时间不许比参考方案的 " + sel.reference_best_cost_s
+        + " 秒贵超过 " + Math.round((sel.cost_cap_ratio - 1) * 100) + "%，"
+        + "即上限 = " + sel.cost_cap_ratio + " × " + sel.reference_best_cost_s
+        + " = " + sel.cost_cap_s + " 模型秒"
+        + (String(sel.reference_source || "").indexOf("pool_fallback") === 0
+           ? "（池内参考，非跨方法参考：这次用本法自己的备选池作为参照）" : "") + "。");
+    }
+    const rec = m.recommended_candidate || {};
+    const best = m.best_cost_candidate || {};
+    if (rec.candidate_id) {
+      lines.push("最后推荐的不是最省时间的那个（最省的要多换 "
+        + (best.vehicle_changes ?? "?") + " 辆车、动 " + (best.adjacency_breaks ?? "?")
+        + " 处顺序），而是换车 " + rec.vehicle_changes + " 次、动顺序 "
+        + rec.adjacency_breaks + " 处、总 " + rec.total_travel_time_s
+        + " 秒的那个——因为原计划已经下发，临时加单尽量不打乱已安排的路线，"
+        + "稳定比单纯省时间更值钱。");
+    } else {
+      lines.push("这次一个候选都没收到，所以没有可推荐的方案（≠ 证明无解）。");
+    }
+  }
+  for (const t of lines) box.appendChild(pLine(t));
+  const SRC = {
+    insert: "result.metrics.diagnostics.inserted（逐单枚举计数 / 拒绝原因 / 可行备选）",
+    rebuild: "result.metrics.solver_status、result.status、result.routes（对照用）",
+    low_disruption: "result.metrics.selection、metrics.candidate_count、metrics.audit_candidates、metrics.diagnostics（种子与局部搜索统计）",
+  };
+  box.appendChild(pLine("以上数字全部来自该次运行的诊断记录，依据字段：" + (SRC[d.method] || "未记录")
+    + "；字段缺失处以“未记录/?”显示，原始 JSON 见下方「展开诊断 JSON」。", "muted"));
+}
+
+/* insert 座位图：每辆车一根条，绿=可行空位、红=被拒，★=选中的车 */
+function seatMap(rec) {
+  const row = document.createElement("div");
+  row.className = "row"; row.style.margin = "2px 0 10px";
+  const lab0 = document.createElement("span");
+  lab0.className = "pill"; lab0.textContent = dispName("order", rec.order_id) + " 找座位";
+  lab0.title = "原始 ID：" + rec.order_id;
+  row.appendChild(lab0);
+  for (const [vid, pv] of Object.entries(rec.per_vehicle || {})) {
+    const wrap = document.createElement("span");
+    wrap.style.display = "inline-flex"; wrap.style.alignItems = "center";
+    wrap.style.gap = "4px";
+    const lab = document.createElement("span");
+    lab.className = "muted"; lab.textContent = dispName("vehicle", vid) + (rec.vehicle_id === vid ? "★" : "");
+    lab.title = "原始 ID：" + vid;
+    wrap.appendChild(lab);
+    const bar = document.createElement("span");
+    bar.style.cssText = "display:inline-block;width:72px;height:10px;"
+      + "background:#ffebe9;border-radius:3px;overflow:hidden";
+    const ok = document.createElement("span");
+    ok.style.cssText = "display:block;height:100%;background:#1a7f37;width:"
+      + (pv.slots ? Math.round(72 * pv.feasible / pv.slots) : 0) + "px";
+    bar.appendChild(ok); wrap.appendChild(bar);
+    const num = document.createElement("span");
+    num.className = "muted"; num.textContent = pv.feasible + "/" + pv.slots + " 可行";
+    wrap.appendChild(num);
+    row.appendChild(wrap);
+  }
+  return row;
+}
+
+/* 低扰动候选散点图：横=模型行驶秒，纵=换车订单数，颜色=相邻顺序破坏数，形状=角色 */
+function renderCandidateScatter(box, m) {
+  const audit = (m.audit_candidates || []).filter(c => c.total_travel_time_s != null);
+  const sel = m.selection || {};
+  if (audit.length < 2) return;
+  const W = 580, H = 240, padL = 46, padB = 34, padT = 16, padR = 14;
+  const xs = audit.map(c => c.total_travel_time_s);
+  if (sel.cost_cap_s != null) xs.push(sel.cost_cap_s);
+  const minX = Math.min(...xs), span = Math.max(1, Math.max(...xs) - minX);
+  const maxY = Math.max(1, ...audit.map(c => c.vehicle_changes)) + 1;
+  const maxBreaks = Math.max(1, ...audit.map(c => c.adjacency_breaks || 0));
+  const x = v => padL + (v - minX) / span * (W - padL - padR);
+  const y = v => H - padB - v / maxY * (H - padT - padB);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.style.maxWidth = "100%";
+  const rect = document.createElementNS(NS, "rect");
+  rect.setAttribute("x", padL); rect.setAttribute("y", padT);
+  rect.setAttribute("width", W - padL - padR);
+  rect.setAttribute("height", H - padT - padB);
+  rect.setAttribute("fill", "#f6f8fa");
+  svg.appendChild(rect);
+  if (sel.cost_cap_s != null) {  // 成本上限线（= 比例 × 参考成本，非"价钱"）
+    const ln = document.createElementNS(NS, "line");
+    ln.setAttribute("x1", x(sel.cost_cap_s)); ln.setAttribute("x2", x(sel.cost_cap_s));
+    ln.setAttribute("y1", padT); ln.setAttribute("y2", H - padB);
+    ln.setAttribute("stroke", "#9a6700"); ln.setAttribute("stroke-dasharray", "5,4");
+    svg.appendChild(ln);
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", x(sel.cost_cap_s) + 4); t.setAttribute("y", padT + 12);
+    t.setAttribute("font-size", "11"); t.setAttribute("fill", "#9a6700");
+    t.textContent = "成本上限 = " + (sel.cost_cap_ratio ?? "?") + " × "
+      + (sel.reference_best_cost_s ?? "?") + " = " + sel.cost_cap_s + " 模型秒";
+    svg.appendChild(t);
+  }
+  // 颜色 = 相邻顺序破坏数：0 破坏灰 → 破坏越多越暖
+  const colorOf = c => {
+    const b = c.adjacency_breaks || 0;
+    if (c.role === "recommended") return "#1a7f37";
+    if (c.role === "pool_best_cost") return "#1f6feb";
+    if (b === 0) return "#9aa4b0";
+    const t = Math.min(1, b / maxBreaks);
+    const r = Math.round(154 + t * (217 - 154)), g = Math.round(164 - t * 60),
+          bl = Math.round(176 - t * 145);
+    return "rgb(" + r + "," + g + "," + bl + ")";
+  };
+  for (const c of audit) {
+    let dot;
+    if (c.role === "pool_best_cost") {  // 池内最低成本：蓝方块
+      dot = document.createElementNS(NS, "rect");
+      dot.setAttribute("x", x(c.total_travel_time_s) - 6);
+      dot.setAttribute("y", y(c.vehicle_changes) - 6);
+      dot.setAttribute("width", 12); dot.setAttribute("height", 12);
+      dot.setAttribute("fill", colorOf(c));
+    } else {                            // 推荐=绿双圈，其余=灰/暖圆
+      dot = document.createElementNS(NS, "circle");
+      dot.setAttribute("cx", x(c.total_travel_time_s));
+      dot.setAttribute("cy", y(c.vehicle_changes));
+      dot.setAttribute("r", c.role === "recommended" ? 8 : 5);
+      dot.setAttribute("fill", colorOf(c));
+      if (c.role === "recommended") {
+        dot.setAttribute("stroke", "#0b5323"); dot.setAttribute("stroke-width", "2");
+      }
+    }
+    const title = document.createElementNS(NS, "title");
+    title.textContent = (c.candidate_id || "") + "：" + c.total_travel_time_s
+      + " 模型秒 · 换车 " + c.vehicle_changes + " · 相邻破坏 " + c.adjacency_breaks
+      + (c.role === "recommended" ? "（推荐）"
+         : c.role === "pool_best_cost" ? "（池内最低成本）" : "");
+    dot.appendChild(title);
+    svg.appendChild(dot);
+  }
+  const x0 = document.createElementNS(NS, "text");
+  x0.setAttribute("x", padL); x0.setAttribute("y", H - 8);
+  x0.setAttribute("font-size", "11"); x0.setAttribute("fill", "#66707d");
+  x0.textContent = "模型行驶秒（总时间）→ 越左越低，从 " + minX + " 到 " + (minX + span);
+  svg.appendChild(x0);
+  const y0 = document.createElementNS(NS, "text");
+  y0.setAttribute("x", 4); y0.setAttribute("y", padT + 10);
+  y0.setAttribute("font-size", "11"); y0.setAttribute("fill", "#66707d");
+  y0.textContent = "换车订单数 ↑";
+  svg.appendChild(y0);
+  const c0 = document.createElementNS(NS, "text");
+  c0.setAttribute("x", padL); c0.setAttribute("y", padT + 12);
+  c0.setAttribute("font-size", "11"); c0.setAttribute("fill", "#66707d");
+  c0.textContent = "颜色越暖 = 相邻顺序破坏越多";
+  svg.appendChild(c0);
+  box.appendChild(svg);
+  box.appendChild(pLine("每个点是一个备选方案：绿圈 = 推荐方案，蓝方块 = 池内最低成本方案，"
+    + "其余圆点颜色越暖 = 相邻顺序破坏越多；虚线 = 成本上限（比例 × 参考方案行驶秒，"
+    + "不是价钱）。", "muted"));
+}
+
+function renderInsertProc(box, m, vizBox) {
+  const diag = (m.diagnostics || {}).inserted || [];
+  if (!diag.length) {
+    box.appendChild(pLine("本次运行未留下逐单插入轨迹（可能为旧版任务或预算耗尽前未开始枚举）。", "muted"));
+    return;
+  }
+  if (vizBox) {
+    vizBox.appendChild(pLine("看图找座位：绿色 = 能放的位置，红色 = 会被拒（超时/超载），★ = 最后选中的车。", "muted"));
+    for (const rec of diag) {
+      if (rec.inserted && rec.per_vehicle) vizBox.appendChild(seatMap(rec));
+    }
+  }
+  box.appendChild(pLine("逐张新单的枚举轨迹（老单固定不动；每个候选槽位都经独立校验器整条路线重算）："));
+  const tbl = document.createElement("table");
+  const head = document.createElement("thead"); const htr = document.createElement("tr");
+  ["新单", "检查槽位", "可行", "排除：容量/时间窗/返仓/其他",
+   "选中位置", "增量(s)", "可行备选 Top3（增量 s）"].forEach(t => {
+    const th = document.createElement("th"); th.textContent = t; htr.appendChild(th);
+  });
+  head.appendChild(htr); tbl.appendChild(head);
+  const tbody = document.createElement("tbody");
+  for (const rec of diag) {
     const tr = document.createElement("tr");
-    td(tr, v);
-    const tdO = document.createElement("td");
-    (origByV[v] || []).forEach(o => { const s = document.createElement("span");
-      s.className = "pill"; s.textContent = o; s.style.marginRight = "4px"; tdO.appendChild(s); });
-    if (!(origByV[v] || []).length) tdO.textContent = "（空）";
-    tr.appendChild(tdO);
-    const tdN = document.createElement("td");
-    (newByV[v] || []).forEach(o => { const s = document.createElement("span");
-      s.className = "pill" + (newIds.has(o) ? " new" : ""); s.textContent = o;
-      s.style.marginRight = "4px"; tdN.appendChild(s); });
-    if (!(newByV[v] || []).length) tdN.textContent = "（空）";
-    tr.appendChild(tdN);
+    td(tr, rec.order_id);
+    if (rec.inserted || rec.slots_checked != null) {
+      td(tr, String(rec.slots_checked ?? "?"));
+      td(tr, String(rec.feasible_count ?? "?"));
+      const rb = rec.rejected_by || {};
+      td(tr, [rb.capacity || 0, rb.time_window || 0, rb.return_late || 0, rb.other || 0].join(" / "));
+      td(tr, rec.inserted ? (rec.vehicle_id + " · 位置" + rec.position) : ("未插入：" + (rec.reason || "")));
+      td(tr, rec.inserted ? String(rec.travel_delta_s) : "—");
+      td(tr, (rec.alternatives || []).map(a =>
+        a.vehicle_id + "·位" + a.position + "(+" + a.travel_delta_s + ")").join("；") || "—");
+    } else {
+      td(tr, "—"); td(tr, "—"); td(tr, "—");
+      td(tr, "未插入：" + (rec.reason || ""), "st-warn");
+      td(tr, "—"); td(tr, "—");
+    }
     tbody.appendChild(tr);
   }
-  if (!vehicles.length) {
-    const tr = document.createElement("tr");
-    td(tr, "无解（或结果为空）", "muted"); tbody.appendChild(tr);
+  tbl.appendChild(tbody); box.appendChild(tbl);
+  box.appendChild(pLine("选择规则：旧订单不换车、相对顺序保持；每张新单在所有车所有槽位中，"
+    + "选行驶时间增量最小者插入；任一单无处插入即整体报“未找到”"
+    + "（不做“证明无解”声称）。", "muted"));
+}
+
+function renderRebuildProc(box, d, r, m) {
+  const locks = d.locks || {};
+  const al = locks.assignment_locks || {};
+  const rl = locks.relative_order_locks || [];
+  const nLock = Object.keys(al).length + rl.length;
+  box.appendChild(pLine("建模口径：18 张单（含新插单）全部重新分配，原计划仅作对照，不作约束来源。"
+    + (nLock ? "遵守的锁定约束 " + nLock + " 条：" : "本次输入无锁定约束。")));
+  const ul = document.createElement("ul");
+  for (const [oid, vid] of Object.entries(al)) {
+    const li = document.createElement("li");
+    li.textContent = "换车锁：" + oid + " 必须仍由 " + vid + " 送";
+    ul.appendChild(li);
   }
+  for (const lock of rl) {
+    const li = document.createElement("li");
+    li.textContent = "相对顺序锁：" + lock.vehicle_id + " 上 "
+      + (lock.order_ids || []).join(" → ") + " 先后不变（允许新单穿插其间）";
+    ul.appendChild(li);
+  }
+  if (nLock) box.appendChild(ul);
+
+  const { counts } = classifyOrders(d.original_plan || [], r.routes || []);
+  box.appendChild(pLine("对照原计划：真正新增 " + counts.nNew + " 张 · 旧单换车 "
+    + counts.nMoved + " 张 · 仅顺序变化 " + counts.nReseq + " 张。"));
+
+  const dl = document.createElement("dl"); dl.className = "kv";
+  kv(dl, "实际后端 / 请求", (d.backend || "-") + " / " + (d.backend_requested || "-"));
+  kv(dl, "求解器状态", (m.solver_status || r.status || "?")
+     + (m.status_detail ? "（" + m.status_detail + "）" : ""));
+  kv(dl, "预算 / 求解耗时 / 端到端",
+     (d.budget_ms ?? "?") + " ms / " + (m.elapsed_solve_ms ?? "?") + " ms / "
+     + (d.total_elapsed_ms ?? "?") + " ms");
+  kv(dl, "独立校验", (r.validation && r.validation.independent_ok) ? "通过" : "未通过");
+  box.appendChild(dl);
+
+  box.appendChild(pLine("诚实性口径：OR-Tools / COPT 返回“可行解”≠ 已证明最优；"
+    + "本次运行求解器未返回最优性界/gap，故不作展示；"
+    + "超时未找到解记为 TIMEOUT，不等于证明问题不可行。", "st-warn"));
+  if (d.backend && d.backend_requested && d.backend !== d.backend_requested) {
+    box.appendChild(pLine("警告：实际后端（" + d.backend + "）与请求后端（"
+      + d.backend_requested + "）不一致。", "st-err"));
+  }
+}
+
+function renderLowProc(box, d, r, m, vizBox) {
+  const sel = m.selection || {};
+  const diag = m.diagnostics || {};
+  const ls = diag.local_search || {};
+  // 成本上限算式（数值直接列出）
+  if (sel.cost_cap_s != null) {
+    box.appendChild(pLine("成本上限算式：" + sel.cost_cap_ratio + " × "
+      + sel.reference_best_cost_s + " = " + sel.cost_cap_s
+      + " 模型秒（比例 × 参考成本）。"));
+    if (String(sel.reference_source || "").indexOf("pool_fallback") === 0) {
+      box.appendChild(pLine("注意：未提供跨方法参考方案，参考成本已回退为本方法候选池最优"
+        + "——池内参考，非跨方法参考；该上限仅是本方法内部口径，"
+        + "不能用于跨方法比较。", "st-warn"));
+    } else {
+      box.appendChild(pLine("参考成本来源：" + (sel.reference_source || "?")
+        + "（同输入同约束下已通过独立校验方案的最低成本）。", "muted"));
+    }
+  }
+  // 候选来源（种子生成）：insert_seed=插单基线诊断（inserted 逐单记录），
+  // relocate_seed=插单失败后的"搬动一个旧任务"枚举（tried/seeds_found，仅在触发时存在）
+  const isd = diag.insert_seed || {};
+  const insRecs = isd.inserted || [];
+  if (insRecs.length || diag.relocate_seed) {
+    const insOk = insRecs.filter(r => r.inserted).length;
+    const insSlots = insRecs.reduce((a, r) => a + (r.slots_checked || 0), 0);
+    let srcTxt = "候选来源（种子生成）：先用插单基线做种子——新单 " + insRecs.length
+      + " 张，直接插入成功 " + insOk + " 张（枚举槽位合计 " + insSlots + " 个）"
+      + (isd.archived ? "；种子归档状态：" + isd.archived : "");
+    if (diag.relocate_seed) {
+      srcTxt += "；插单失败后启用搬迁种子：尝试 " + (diag.relocate_seed.tried ?? "?")
+        + " 个 / 找到 " + (diag.relocate_seed.seeds_found ?? "?") + " 个"
+        + (diag.relocate_seed.stopped
+           ? "（停止原因 " + diag.relocate_seed.stopped + "）" : "");
+    } else {
+      srcTxt += "；未触发搬迁种子（插单已直接成功）";
+    }
+    srcTxt += "。候选池共 " + (m.candidate_count ?? "?") + " 个可行候选；"
+      + "评估邻居 " + (ls.evaluated ?? "?") + " 个 · 迭代 " + (ls.iterations ?? "?")
+      + " 轮 · 停止原因：" + (m.search_stop_reason || ls.stop_reason || "?") + "。";
+    box.appendChild(pLine(srcTxt));
+  } else {
+    box.appendChild(pLine("候选来源：未记录（可能为旧版任务）。候选池共 "
+      + (m.candidate_count ?? "?") + " 个可行候选；评估邻居 " + (ls.evaluated ?? "?")
+      + " 个 · 迭代 " + (ls.iterations ?? "?") + " 轮 · 停止原因："
+      + (m.search_stop_reason || ls.stop_reason || "?") + "。"));
+  }
+
+  const audit = m.audit_candidates || [];
+  if (audit.length) {
+    box.appendChild(pLine("候选并排（Top K 审计候选，含稳定候选编号，可凭编号在原始 JSON 中复核完整路线）："));
+    const tbl = document.createElement("table");
+    const head = document.createElement("thead"); const htr = document.createElement("tr");
+    ["角色", "候选编号", "行驶时间(s)", "换车数", "相邻破坏", "上限内", "独立校验"].forEach(t => {
+      const th = document.createElement("th"); th.textContent = t; htr.appendChild(th);
+    });
+    head.appendChild(htr); tbl.appendChild(head);
+    const tbody = document.createElement("tbody");
+    const roleName = { recommended: "推荐方案", pool_best_cost: "池内最低成本",
+      cap_boundary: "上限边界", pareto: "Pareto 前沿", top_k: "其他候选" };
+    for (const c of audit) {
+      const tr = document.createElement("tr");
+      td(tr, roleName[c.role] || c.role || "?");
+      td(tr, c.candidate_id);
+      td(tr, String(c.total_travel_time_s));
+      td(tr, String(c.vehicle_changes));
+      td(tr, String(c.adjacency_breaks));
+      const within = sel.cost_cap_s != null && c.total_travel_time_s <= sel.cost_cap_s;
+      td(tr, within ? "是" : "否", within ? "st-ok" : "muted");
+      td(tr, c.validation_ok ? "通过" : "未通过", c.validation_ok ? "st-ok" : "st-err");
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody); box.appendChild(tbl);
+  }
+  if (vizBox) renderCandidateScatter(vizBox, m);
+  box.appendChild(pLine("为什么推荐方案不一定是最低行驶时间：推荐 = 成本上限内按"
+    + "（换车数 → 相邻破坏 → 成本）字典序最优的候选；池内行驶时间最低的方案见上表"
+    + "“池内最低成本”一行。本方法不调用 COPT/OR-Tools，总耗时即其端到端耗时。", "muted"));
+}
+
+/* ---------- 三方法比较（同口径门控） ---------- */
+let lastHistory = null;
+
+async function renderMethodCompare() {
+  const card = $("cardCompare"); const box = $("compareBox");
+  box.textContent = "";
+  const results = (lastHistory && lastHistory.results) || [];
+  if (!results.length) {
+    card.classList.add("hidden"); return;
+  }
+  card.classList.remove("hidden");
+  // 按（版本, 输入哈希, 请求预算）分组；同组内每方法取最新一次成功运行
+  const groups = {};
+  for (const row of results) {
+    const key = "v" + row.scenario_version + "|" + row.scenario_input_hash
+      + "|req" + row.requested_budget_ms;
+    groups[key] = groups[key] || { version: row.scenario_version,
+      hash: row.scenario_input_hash, req: row.requested_budget_ms, byMethod: {} };
+    const g = groups[key];
+    const cur = g.byMethod[row.method];
+    if (!cur || String(row.finished_at || "") > String(cur.finished_at || "")) {
+      g.byMethod[row.method] = row;
+    }
+  }
+  let shown = 0;
+  for (const [key, g] of Object.entries(groups)) {
+    const rows = Object.values(g.byMethod);
+    const head = document.createElement("div"); head.className = "pickgroup";
+    head.textContent = "v" + g.version + " · 哈希 " + String(g.hash || "?").slice(0, 12)
+      + "… · 请求预算 " + g.req + " ms";
+    box.appendChild(head);
+    if (rows.length < 2) {
+      box.appendChild(pLine("该口径仅 " + rows.length + " 种方法的运行，不出比较表"
+        + "（口径不足时不并排暗示算法优劣）。", "muted"));
+      continue;
+    }
+    if (shown >= 4) { box.appendChild(pLine("（其余口径组省略）", "muted")); break; }
+    shown++;
+    // 补齐各行扰动指标：有解的行取其 result.json 用同口径算法计算
+    const enriched = await Promise.all(rows.map(async (row) => {
+      if (!row.has_solution) return { row, pert: null };
+      try {
+        const d = await api("/api/jobs/" + encodeURIComponent(row.job_id) + "/result.json");
+        return { row, pert: perturbationCounts(d.original_plan || [],
+          (d.result && d.result.routes) || []) };
+      } catch (e) {
+        return { row, pert: null };
+      }
+    }));
+    enriched.sort((a, b) => {
+      if (!!b.row.has_solution - !!a.row.has_solution) return !!b.row.has_solution - !!a.row.has_solution;
+      const ca = a.row.cost_s, cb = b.row.cost_s;
+      if (ca == null && cb == null) return 0;
+      if (ca == null) return 1;
+      if (cb == null) return -1;
+      return ca - cb;
+    });
+    const tbl = document.createElement("table");
+    const thead = document.createElement("thead"); const htr = document.createElement("tr");
+    ["方法", "后端", "可行", "求解状态", "总行驶时间(模型秒)", "换车数", "相邻破坏", "耗时 ms"]
+      .forEach(t => { const th = document.createElement("th"); th.textContent = t; htr.appendChild(th); });
+    thead.appendChild(htr); tbl.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    for (const { row, pert } of enriched) {
+      const tr = document.createElement("tr");
+      td(tr, row.method);
+      td(tr, row.backend || "-");
+      td(tr, row.has_solution ? "是" : "否", row.has_solution ? "st-ok" : "st-warn");
+      td(tr, row.status || "?");
+      td(tr, row.cost_s != null ? String(row.cost_s) : "—");
+      td(tr, pert ? String(pert.vehicle_changes) : "—");
+      td(tr, pert ? String(pert.adjacency_breaks) : "—");
+      td(tr, String(row.elapsed_ms ?? "?"));
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody); box.appendChild(tbl);
+    // 大白话选法建议（规则生成：谁总时间最低 / 谁换车最少）
+    const feas = enriched.filter(e => e.row.has_solution && e.row.cost_s != null);
+    if (feas.length) {
+      const minCost = feas.reduce((a, b) => b.row.cost_s < a.row.cost_s ? b : a);
+      const withPert = feas.filter(e => e.pert);
+      const minMove = withPert.length
+        ? withPert.reduce((a, b) => b.pert.vehicle_changes < a.pert.vehicle_changes ? b : a)
+        : null;
+      let t = "怎么选：";
+      if (minMove && minMove.row.method !== minCost.row.method
+          && minMove.pert.vehicle_changes < minCost.pert.vehicle_changes) {
+        t += "不想打乱已下发的原计划（少换车）→ 选 " + minMove.row.method + "（换车 "
+          + minMove.pert.vehicle_changes + " 次）；只在乎总时间、允许全部重排 → 选 "
+          + minCost.row.method + "（" + minCost.row.cost_s
+          + " 秒最短）。最终由人工拍板。";
+      } else {
+        t += minCost.row.method + " 在可行方案里总时间最短（" + minCost.row.cost_s
+          + " 秒）；是否采用由人工复核后决定。";
+      }
+      box.appendChild(pLine(t));
+    }
+  }
+  if (!shown) box.appendChild(pLine("暂无任何口径组集齐 ≥2 种方法；跑完三方法后再来看。", "muted"));
 }
 
 function renderTimetable(schedule) {
@@ -519,7 +1469,11 @@ function renderTimetable(schedule) {
   tbody.textContent = "";
   for (const s of schedule) {
     const tr = document.createElement("tr");
-    td(tr, s.vehicle_id); td(tr, s.order_id); td(tr, s.arrive_s);
+    const vtd = td(tr, dispName("vehicle", s.vehicle_id));
+    vtd.title = "原始 ID：" + s.vehicle_id;
+    const otd = td(tr, dispName("order", s.order_id));
+    otd.title = "原始 ID：" + s.order_id;
+    td(tr, s.arrive_s);
     td(tr, s.wait_s); td(tr, s.start_s); td(tr, s.depart_s);
     tbody.appendChild(tr);
   }
@@ -542,12 +1496,44 @@ $("btnExportJson").onclick = async () => {
   a.download = "result_" + sel.job + ".json";
   a.click(); URL.revokeObjectURL(a.href);
 };
+/* 演示称谓对照表：通俗演示版每个展示名 ↔ 原始 ID，供审查核对翻译忠实性 */
+$("btnExportNames").onclick = () => {
+  const d = lastResultData;
+  if (!d) return;
+  const orders = new Set(), vehicles = new Set();
+  for (const r of d.original_plan || []) {
+    vehicles.add(r.vehicle_id);
+    (r.order_ids || []).forEach(o => orders.add(o));
+  }
+  const res = (d.result || {});
+  for (const r of res.routes || []) {
+    vehicles.add(r.vehicle_id);
+    (r.order_ids || []).forEach(o => orders.add(o));
+  }
+  const lines = [
+    "# cvd-dispatch-copilot 演示称谓对照表",
+    "# scenario_id=" + (d.scenario_id || "?") + "; version=v" + (d.version ?? "?")
+      + "; input_hash=" + (d.input_hash || "?") + "; job_id=" + d.job_id,
+    "# mapping_algo=" + NAMING_ALGO + "; generated_at=" + new Date().toISOString(),
+    "# 说明：demo_name 仅用于通俗演示版展示，不代表实际地理/客户/人员/业务含义",
+    "kind,raw_id,demo_name",
+  ];
+  for (const v of [...vehicles].sort()) lines.push("vehicle," + v + "," + demoName("vehicle", v));
+  for (const o of [...orders].sort()) lines.push("order," + o + "," + demoName("order", o));
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "names_" + d.job_id + ".csv";
+  a.click(); URL.revokeObjectURL(a.href);
+};
 
 /* ---------- 历史 ---------- */
 async function loadHistory(sid) {
   const box = $("historyBox"); box.textContent = "加载中…";
   try {
     const d = await api("/api/scenarios/" + encodeURIComponent(sid) + "/history");
+    lastHistory = d;
+    renderMethodCompare();
     box.textContent = "";
     if (!d.versions.length && !d.results.length) { box.textContent = "暂无历史"; return; }
     if (d.versions.length) {
@@ -559,14 +1545,16 @@ async function loadHistory(sid) {
       const tbl = document.createElement("table");
       const thead = document.createElement("thead");
       const htr = document.createElement("tr");
-      ["任务","方法","后端","预算 ms","可行","状态","成本 s","耗时 ms"].forEach(t => {
+      ["任务","方法","后端","有效预算 ms","请求预算 ms","版本","可行","状态","成本 s","耗时 ms"].forEach(t => {
         const th = document.createElement("th"); th.textContent = t; htr.appendChild(th); });
       thead.appendChild(htr); tbl.appendChild(thead);
       const tbody = document.createElement("tbody");
       for (const r of d.results) {
         const tr = document.createElement("tr");
         td(tr, r.job_id); td(tr, r.method); td(tr, r.backend || "-");
-        td(tr, r.budget_ms); td(tr, r.has_solution ? "是" : "否");
+        td(tr, r.budget_ms); td(tr, r.requested_budget_ms ?? "-");
+        td(tr, "v" + (r.scenario_version ?? "?"));
+        td(tr, r.has_solution ? "是" : "否");
         td(tr, r.status); td(tr, r.cost_s ?? "-"); td(tr, r.elapsed_ms ?? "-");
         tbody.appendChild(tr);
       }
@@ -576,6 +1564,19 @@ async function loadHistory(sid) {
 }
 
 /* ---------- 启动 ---------- */
+(function initMode() {
+  let stored = null;
+  try { stored = localStorage.getItem("cvd_mode"); } catch (e) { /* 忽略 */ }
+  if (stored === "layman" || stored === "pro") {
+    curMode = stored;
+    applyMode();
+  } else {
+    $("modeGate").classList.remove("hidden");   // 首次访问：双入口同权重，不预选
+  }
+  $("gateLayman").onclick = () => chooseMode("layman");
+  $("gatePro").onclick = () => chooseMode("pro");
+  $("btnMode").onclick = () => chooseMode(curMode === "layman" ? "pro" : "layman");
+})();
 (async function init() {
   try {
     const h = await api("/api/health");

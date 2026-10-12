@@ -194,11 +194,14 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
         report = validate_draft(draft)
         issues = [i.to_dict() for i in report.issues]
         mat_path = settings.materialized_dir / f"{scenario_id}.json"
+        meta = doc.get("_meta") or {}
         detail = {"scenario_id": scenario_id,
                   "draft_input_hash": input_hash(draft),
                   "n_orders": len(draft.orders),
                   "n_vehicles": len(draft.vehicles),
                   "materialized": mat_path.is_file(),
+                  "base_instance": meta.get("base_instance"),
+                  "synthetic_events": meta.get("synthetic_events"),
                   "issues": issues}
         if mat_path.is_file():
             scn = Scenario(**json.loads(mat_path.read_text(encoding="utf-8")))
@@ -206,6 +209,38 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                            "input_hash": input_hash(scn),
                            "n_plan_routes": len(scn.original_plan.routes)})
         return detail
+
+    @router.get("/scenarios/{scenario_id}/vizdata")
+    def scenario_vizdata(scenario_id: str):
+        """小白模式可视化用：订单-节点映射 + 行驶时间矩阵（只读，不含坐标）。"""
+        try:
+            scn = index.load_scenario(scenario_id)
+        except HTTPException:
+            raise HTTPException(404, "场景未物化：请先运行 baseline 生成原计划")
+        return {"scenario_id": scenario_id, "version": scn.version,
+                "depot_node_id": scn.depot_node_id,
+                "orders": [{"order_id": o.order_id, "node_id": o.node_id,
+                            "is_new": o.is_new} for o in scn.orders],
+                "vehicles": [v.vehicle_id for v in scn.vehicles],
+                "matrix": {"node_ids": list(scn.travel_matrix.node_ids),
+                           "time_s": scn.travel_matrix.time_s}}
+
+    @router.get("/scenarios/{scenario_id}/picker")
+    def scenario_picker(scenario_id: str):
+        """约束模板弹窗用：车辆、订单（含新单标记）与原计划分组（若有）。"""
+        doc = index.load_doc(scenario_id)
+        draft = ScenarioDraft(**doc["draft"])
+        out = {"orders": [{"order_id": o.order_id, "is_new": o.is_new}
+                          for o in draft.orders],
+               "vehicles": [v.vehicle_id for v in draft.vehicles],
+               "plan_routes": []}
+        mat_path = settings.materialized_dir / f"{scenario_id}.json"
+        if mat_path.is_file():
+            scn = Scenario(**json.loads(mat_path.read_text(encoding="utf-8")))
+            out["plan_routes"] = [
+                {"vehicle_id": r.vehicle_id, "order_ids": list(r.order_ids)}
+                for r in scn.original_plan.routes]
+        return out
 
     @router.get("/template")
     def template():
@@ -483,10 +518,18 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
         original_plan = [
             {"vehicle_id": r.vehicle_id, "order_ids": list(r.order_ids)}
             for r in snap.original_plan.routes] if snap else []
+        locks = (snap.locks.model_dump(mode="json")
+                 if snap else {"assignment_locks": {},
+                               "relative_order_locks": []})
         executable, reason = _executability(row)
+        doc = index.load_doc(row.get("scenario_id"))
+        meta = doc.get("_meta") or {}
         body = {"job_id": job_id,
+                "scenario_id": row.get("scenario_id"),
                 "version": row.get("scenario_version"),
                 "input_hash": row.get("scenario_input_hash"),
+                "base_instance": meta.get("base_instance"),
+                "synthetic_events": meta.get("synthetic_events"),
                 "method": row.get("method"), "backend": row.get("backend"),
                 "backend_requested": row.get("backend_requested"),
                 "budget_ms": row.get("budget_ms"),
@@ -496,6 +539,7 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                 "has_solution": row.get("has_solution"),
                 "executable": executable,
                 "original_plan": original_plan,
+                "locks": locks,
                 "result": row.get("result")}
         if not executable:
             body["notice"] = ("诊断原始结果，不可执行：" + reason
@@ -542,6 +586,9 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                 "job_id": meta["job_id"],
                 "method": r.get("method"), "backend": r.get("backend"),
                 "budget_ms": r.get("budget_ms"),
+                "requested_budget_ms": r.get("requested_budget_ms"),
+                "scenario_version": r.get("scenario_version"),
+                "scenario_input_hash": r.get("scenario_input_hash"),
                 "has_solution": r.get("has_solution"),
                 "status": r["result"]["status"],
                 "cost_s": r["result"].get("metrics", {}).get("total_travel_time_s"),

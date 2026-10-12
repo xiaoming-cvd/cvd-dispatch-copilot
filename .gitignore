@@ -30,6 +30,9 @@ copt*/
 data/processed/drafts/
 data/processed/jobs/
 data/processed/exports/
+data/processed/scenarios/_materialized/
+data/processed/scenarios/versions/
+reports/_smoke*.log
 
 # 打包与临时产物
 *.tmp
