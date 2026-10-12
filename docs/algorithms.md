@@ -10,9 +10,17 @@
 
 ## 低扰动成本上限（重要口径）
 
-- 业务上限 = `cost_cap_ratio × reference_best_cost`；reference_best 来自
-  **跨方法已验证方案**的最低成本；未提供时回退为候选池最优并标注
-  `pool_fallback`。
+- 业务上限 = `cost_cap_ratio × reference_best_cost`。
+- 参考链（优先级从高到低，2026-10-12 队长决策修订）：
+  1. **跨方法已验证方案**的最低成本（`reference_results`，冻结评测口径）；
+  2. **baseline 原计划成本**（Web 任务链路显式开启
+     `use_baseline_reference=True`；容缺口径——原计划只含旧订单，
+     逐路线独立重算，任一路线违规则该参考不可用；`reference_source=
+     "baseline"`。语义：新计划总时间 ≤ 比例 × 原计划总时间，口径偏紧，
+     超限时如实标注）；
+  3. 回退为候选池最优并标注 `pool_fallback`（池内参考，非跨方法参考）。
+  `use_baseline_reference` 默认 False：冻结评测（`scripts/run_evaluation.py`）
+  语义不变，历史结果可复现。
 - 上限内无候选：推荐池内最低成本候选，`solver_status=
   no_candidate_within_cost_cap`，`within_cap=FALSE`（机器可读），
   **不计入达标可行率**。

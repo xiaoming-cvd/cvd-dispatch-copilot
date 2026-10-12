@@ -35,7 +35,8 @@ import time
 from dataclasses import dataclass
 
 from ..domain.models import RouteResult, Scenario
-from ..validation.timetable import evaluate_route, validate_solution
+from ..validation.timetable import (
+    evaluate_original_plan, evaluate_route, validate_solution)
 from . import insert as insert_mod
 from . import perturbation as pert_mod
 
@@ -390,20 +391,24 @@ def _local_search(
 def _select(
     candidates: list[Candidate], diagnostics: dict,
     cost_cap_ratio: float, reference_best_cost: float | None,
+    reference_source_name: str | None = None,
 ) -> tuple[Candidate | None, Candidate | None, dict]:
     """返回 (recommended, pool_best, selection 回显)。
 
     业务上限 = cost_cap_ratio × reference_best_cost；reference 未给出时
     如实回退为池内最优并标注。上限内无候选 → 推荐池内最低成本候选，
     selection_status="no_candidate_within_cost_cap"。
+    reference_source_name 供调用方区分参考来源（"reference_results"
+    跨方法 / "baseline" 原计划成本 / None 池内回退）。
     """
     if not candidates:
         return None, None, {"selection_status": "no_candidates"}
     pool_best = min(candidates, key=lambda c: (c.total_travel_s, c.key))
     ref = reference_best_cost if reference_best_cost is not None \
         else pool_best.total_travel_s
-    ref_source = "reference_results" if reference_best_cost is not None \
-        else "pool_fallback(未提供跨方法参考，上限仅相对本方法候选池)"
+    ref_source = (reference_source_name
+                  or ("reference_results" if reference_best_cost is not None
+                      else "pool_fallback(未提供跨方法参考，上限仅相对本方法候选池)"))
     cap = cost_cap_ratio * ref
     pool = [c for c in candidates if c.total_travel_s <= cap + 1e-9]
     if pool:
@@ -579,6 +584,7 @@ def solve_low_disruption(
     *,
     cost_cap_ratio: float = DEFAULT_COST_CAP,
     reference_results=None,
+    use_baseline_reference: bool = False,
     max_archive_size: int = DEFAULT_MAX_ARCHIVE,
     beam_width: int = DEFAULT_BEAM_WIDTH,
     max_neighbors_per_candidate: int = DEFAULT_MAX_NEIGHBORS,
@@ -587,6 +593,15 @@ def solve_low_disruption(
 
     cost_cap_ratio 范围 [0.5, 2.0]；reference_results 为跨方法已验证方案
     （见 _reference_best_cost）。预算为绝对截止时刻，只扣一次。
+
+    参考链（优先级从高到低）：
+    1. reference_results（跨方法已验证方案，如冻结评测）；
+    2. use_baseline_reference=True 时的 baseline 原计划成本（容缺口径：
+       原计划只含旧订单，逐路线独立重算，任一路线违规则该参考不可用，
+       reference_source 记 "baseline"）；
+    3. 池内最优回退（如实标注）。
+    use_baseline_reference 默认 False：冻结评测（run_evaluation.py）语义
+    不变，历史结果可复现；Web 任务链路显式开启。
     """
     if not (RATIO_MIN <= cost_cap_ratio <= RATIO_MAX):
         raise ValueError(
@@ -599,9 +614,23 @@ def solve_low_disruption(
     diagnostics: dict = dict(gen_diag)
 
     reference_best, ref_details = _reference_best_cost(scn, reference_results)
+    ref_source_name = ("reference_results"
+                       if reference_best is not None else None)
+    if reference_best is None and use_baseline_reference:
+        base_cost, base_details = evaluate_original_plan(scn)
+        ref_details.append({
+            "name": "baseline(原计划，容缺口径：只含旧订单)",
+            "used": base_cost is not None,
+            "total_travel_time_s": base_cost,
+            "route_details": base_details,
+        })
+        if base_cost is not None:
+            reference_best = base_cost
+            ref_source_name = "baseline"
     diagnostics["reference_details"] = ref_details
     low, best, selection = _select(
-        list(candidates), diagnostics, cost_cap_ratio, reference_best)
+        list(candidates), diagnostics, cost_cap_ratio, reference_best,
+        ref_source_name)
     audit = _audit_output(scn, low, best, list(candidates), selection)
     diagnostics["elapsed_ms"] = int((time.monotonic() - started) * 1000)
     return LowDisruptionOutcome(

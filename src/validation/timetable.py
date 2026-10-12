@@ -247,3 +247,26 @@ def build_routes_from_evals(
         RouteResult(vehicle_id=e.vehicle_id, order_ids=list(e.order_ids), return_s=e.return_s)
         for e in evals
     ]
+
+
+def evaluate_original_plan(scn: Scenario) -> tuple[float | None, list[dict]]:
+    """原计划（baseline）总行驶成本：逐路线独立重算（容缺口径）。
+
+    原计划只含旧订单、天然不含新订单，因此不走 validate_solution 的全覆盖
+    校验（否则必然"漏单"被拒）；改为逐路线独立重算。任何一条路线自身违规
+    （时间窗/超载/返仓晚）则该参考不可用：返回 (None, 明细)。
+
+    返回 (总成本或 None, 每路线明细 [{vehicle_id, used, issues,
+    travel_time_s}])，供 baseline 任务/场景详情展示与低扰动参考链使用。
+    """
+    total = 0.0
+    details: list[dict] = []
+    for r in scn.original_plan.routes:
+        ev = evaluate_route(scn, r.vehicle_id, list(r.order_ids))
+        codes = [i.code for i in ev.issues]
+        details.append({"vehicle_id": r.vehicle_id, "used": not codes,
+                        "issues": codes, "travel_time_s": ev.travel_time_s})
+        if codes:
+            return None, details
+        total += ev.travel_time_s
+    return total, details

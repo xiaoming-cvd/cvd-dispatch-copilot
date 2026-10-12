@@ -664,3 +664,27 @@ def test_queue_start_refuses_while_alive(tmp_path):
     assert q.stop() is True
     q.start()  # 真正退出后可重启
     assert q.stop() is True
+
+
+def test_low_disruption_uses_baseline_reference(app, client):
+    """队长决策（2026-10-12）：Web 链路低扰动以 baseline 原计划成本为参考。
+
+    场景详情同时透出 plan_total_travel_time_s 供页面标注"原计划成本"。
+    """
+    upload(client, "t-ldref-001")
+    meta, res = submit_and_wait(client, app, "/api/baseline",
+                                {"scenario_id": "t-ldref-001", "budget_ms": 20000})
+    assert meta["status"] == "succeeded", meta.get("error")
+    assert res["plan_total_travel_time_s"] is not None
+
+    detail = client.get("/api/scenarios/t-ldref-001").json()
+    assert detail["plan_total_travel_time_s"] == res["plan_total_travel_time_s"]
+
+    meta, _ = submit_and_wait(client, app, "/api/solve",
+                              {"scenario_id": "t-ldref-001",
+                               "method": "low_disruption", "budget_ms": 20000})
+    assert meta["status"] == "succeeded", meta.get("error")
+    body = client.get(f"/api/jobs/{meta['job_id']}/result.json").json()
+    sel = body["result"]["metrics"]["selection"]
+    assert sel["reference_source"] == "baseline"
+    assert sel["reference_best_cost_s"] == res["plan_total_travel_time_s"]

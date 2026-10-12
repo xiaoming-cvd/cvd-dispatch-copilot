@@ -396,6 +396,10 @@ async function selectScenario(sid) {
       kv(dl, "已物化版本", "v" + d.version);
       kv(dl, "场景 input_hash", d.input_hash);
       kv(dl, "原计划路线数", String(d.n_plan_routes));
+      if (d.plan_total_travel_time_s != null) {
+        kv(dl, "原计划总成本（baseline）", d.plan_total_travel_time_s + " 模型秒"
+           + "（逐路线独立重算；只含旧订单，是低扰动成本上限的参考基准）");
+      }
       $("solveBaseVersion").placeholder = "当前 v" + d.version;
     }
     if (d.issues && d.issues.length) {
@@ -1057,12 +1061,15 @@ function renderStory(d, r, m) {
       + "搜到停不下来时会主动收手（本次停止原因："
       + (m.search_stop_reason || "?") + "）。");
     if (sel.cost_cap_s != null) {
+      const srcNote = String(sel.reference_source || "").indexOf("pool_fallback") === 0
+        ? "（池内参考，非跨方法参考：这次用本法自己的备选池作为参照）"
+        : sel.reference_source === "baseline"
+          ? "（参考 = 原计划本身的成本；它还没算新单，所以这条线偏紧，超了会如实标注）"
+          : "";
       lines.push("挑方案的红线：总时间不许比参考方案的 " + sel.reference_best_cost_s
         + " 秒贵超过 " + Math.round((sel.cost_cap_ratio - 1) * 100) + "%，"
         + "即上限 = " + sel.cost_cap_ratio + " × " + sel.reference_best_cost_s
-        + " = " + sel.cost_cap_s + " 模型秒"
-        + (String(sel.reference_source || "").indexOf("pool_fallback") === 0
-           ? "（池内参考，非跨方法参考：这次用本法自己的备选池作为参照）" : "") + "。");
+        + " = " + sel.cost_cap_s + " 模型秒" + srcNote + "。");
     }
     const rec = m.recommended_candidate || {};
     const best = m.best_cost_candidate || {};
@@ -1153,6 +1160,22 @@ function renderCandidateScatter(box, m) {
     t.textContent = "成本上限 = " + (sel.cost_cap_ratio ?? "?") + " × "
       + (sel.reference_best_cost_s ?? "?") + " = " + sel.cost_cap_s + " 模型秒";
     svg.appendChild(t);
+  }
+  if (sel.reference_source === "baseline" && sel.reference_best_cost_s != null) {
+    // 参考基准线：baseline 原计划成本（只含旧订单，位置通常在最左侧）
+    const bl = document.createElementNS(NS, "line");
+    bl.setAttribute("x1", x(sel.reference_best_cost_s));
+    bl.setAttribute("x2", x(sel.reference_best_cost_s));
+    bl.setAttribute("y1", padT); bl.setAttribute("y2", H - padB);
+    bl.setAttribute("stroke", "#66707d");
+    bl.setAttribute("stroke-dasharray", "2,3");
+    svg.appendChild(bl);
+    const bt = document.createElementNS(NS, "text");
+    bt.setAttribute("x", x(sel.reference_best_cost_s) + 4);
+    bt.setAttribute("y", H - padB - 4);
+    bt.setAttribute("font-size", "11"); bt.setAttribute("fill", "#66707d");
+    bt.textContent = "← 原计划成本（参考）";
+    svg.appendChild(bt);
   }
   // 颜色 = 相邻顺序破坏数：0 破坏灰 → 破坏越多越暖
   const colorOf = c => {
@@ -1315,6 +1338,10 @@ function renderLowProc(box, d, r, m, vizBox) {
       box.appendChild(pLine("注意：未提供跨方法参考方案，参考成本已回退为本方法候选池最优"
         + "——池内参考，非跨方法参考；该上限仅是本方法内部口径，"
         + "不能用于跨方法比较。", "st-warn"));
+    } else if (sel.reference_source === "baseline") {
+      box.appendChild(pLine("参考成本来源：baseline 原计划成本（同版本快照逐路线独立"
+        + "重算；原计划只含旧订单、不含新单，口径偏紧）。上限 = 比例 × 该参考；"
+        + "候选超出上限时如实标注 within_reference_cap=false，不冒充达标。", "muted"));
     } else {
       box.appendChild(pLine("参考成本来源：" + (sel.reference_source || "?")
         + "（同输入同约束下已通过独立校验方案的最低成本）。", "muted"));

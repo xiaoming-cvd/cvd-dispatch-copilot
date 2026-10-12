@@ -121,12 +121,15 @@ def solve(
     cost_cap_ratio: float | None = None,
     reference_results=None,
     backend: str | None = None,
+    use_baseline_reference: bool = False,
 ) -> SolveOutcome:
     """对一个完整场景跑一种基线方法，返回规范 SolveResult。
 
-    cost_cap_ratio / reference_results 仅对 low_disruption 生效：
-    业务成本上限 = cost_cap_ratio × reference_best_cost（跨方法已验证
-    方案的最低成本）；reference_results 为 [(name, routes), ...]。
+    cost_cap_ratio / reference_results / use_baseline_reference 仅对
+    low_disruption 生效：业务成本上限 = cost_cap_ratio ×
+    reference_best_cost。参考链优先级：reference_results（跨方法已验证
+    方案）→ baseline 原计划成本（use_baseline_reference=True 时）→
+    池内最优回退（如实标注）。
 
     backend 仅对 rebuild 生效（2026-10-11 队长决策：默认 OR-Tools，
     交付无 COPT 许可可跑；COPT 为可选后端且必须显式指定）：
@@ -265,7 +268,8 @@ def solve(
                 cost_cap_ratio=(cost_cap_ratio
                                 if cost_cap_ratio is not None
                                 else low_mod.DEFAULT_COST_CAP),
-                reference_results=reference_results)
+                reference_results=reference_results,
+                use_baseline_reference=use_baseline_reference)
             if outcome.recommended is None:
                 result = _assemble(
                     scn, method, time_limit_ms, started,

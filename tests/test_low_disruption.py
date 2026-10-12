@@ -33,7 +33,8 @@ from src.solver import diff as diff_mod
 from src.solver import low_disruption as low_mod
 from src.solver import perturbation as pert_mod
 from src.solver.pipeline import solve
-from src.validation.timetable import evaluate_route, validate_solution
+from src.validation.timetable import (
+    evaluate_original_plan, evaluate_route, validate_solution)
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = json.loads((ROOT / "data" / "sample" / "sample_small.json").read_text(encoding="utf-8"))
@@ -361,3 +362,63 @@ class TestReviewCounterexamples:
             SCN, time_limit_ms=5000, max_archive_size=1)
         assert outcome.diagnostics["local_search"]["stop_reason"] == "archive_full"
         assert len(outcome.candidates) == 1
+
+
+class TestBaselineReference:
+    """baseline 原计划成本作为低扰动参考（2026-10-12 队长决策：
+    "在每个 baseline 推荐成本，作为参考"）。
+
+    参考链优先级：跨方法 reference_results > baseline（opt-in 显式开启）
+    > 池内最优回退。baseline 原计划只含旧订单，走容缺口径逐路线独立重算
+    （evaluate_original_plan）；任一路线自身违规则该参考不可用并如实回退。
+    use_baseline_reference 默认 False：冻结评测（run_evaluation.py）语义
+    不变，历史结果可复现；Web 任务链路显式开启。
+    """
+
+    def test_baseline_reference_used_when_enabled(self):
+        outcome = low_mod.solve_low_disruption(
+            SCN, time_limit_ms=5000, use_baseline_reference=True)
+        sel = outcome.selection
+        assert sel["reference_source"] == "baseline"
+        expected, _ = evaluate_original_plan(SCN)
+        assert expected is not None
+        assert sel["reference_best_cost_s"] == expected
+        base_entry = [d for d in outcome.diagnostics["reference_details"]
+                      if str(d.get("name", "")).startswith("baseline")]
+        assert base_entry and base_entry[0]["used"] is True
+
+    def test_reference_results_take_precedence_over_baseline(self):
+        ref_routes = _routes(SCN, {"V1": ["o1", "o2"], "V2": ["o3", "o4", "o5"]})
+        assert validate_solution(SCN, ref_routes).ok
+        outcome = low_mod.solve_low_disruption(
+            SCN, time_limit_ms=5000,
+            reference_results=[("rebuild", ref_routes)],
+            use_baseline_reference=True)
+        assert outcome.selection["reference_source"] == "reference_results"
+
+    def test_baseline_disabled_by_default(self):
+        """冻结评测兼容：默认不传 baseline，无跨方法参考时仍记池内回退。"""
+        outcome = low_mod.solve_low_disruption(SCN, time_limit_ms=5000)
+        assert "pool_fallback" in outcome.selection["reference_source"]
+        assert not any(str(d.get("name", "")).startswith("baseline")
+                       for d in outcome.diagnostics["reference_details"])
+
+    def test_baseline_route_violation_falls_back_to_pool(self, monkeypatch):
+        monkeypatch.setattr(
+            low_mod, "evaluate_original_plan",
+            lambda scn: (None, [{"vehicle_id": "V1", "used": False,
+                                 "issues": ["E_ROUTE_LATE"],
+                                 "travel_time_s": 0}]))
+        outcome = low_mod.solve_low_disruption(
+            SCN, time_limit_ms=5000, use_baseline_reference=True)
+        assert "pool_fallback" in outcome.selection["reference_source"]
+        base_entry = [d for d in outcome.diagnostics["reference_details"]
+                      if str(d.get("name", "")).startswith("baseline")]
+        assert base_entry and base_entry[0]["used"] is False
+
+    def test_pipeline_opt_in_and_default_off(self):
+        on = solve(SCN, "low_disruption", time_limit_ms=5000,
+                   use_baseline_reference=True)
+        assert on.result.metrics["reference_source"] == "baseline"
+        off = solve(SCN, "low_disruption", time_limit_ms=5000)
+        assert "pool_fallback" in off.result.metrics["reference_source"]

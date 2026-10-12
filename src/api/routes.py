@@ -20,6 +20,7 @@ from ..llm.schema import DraftStatus
 from ..solver import pipeline
 from ..solver.original import materialize_scenario
 from ..validation.checks import validate_draft
+from ..validation.timetable import evaluate_original_plan
 
 from .app import (Settings, ScenarioIndex, build_result_csv, csv_cell)
 from .jobs import JobQueue
@@ -105,9 +106,14 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                 "baseline 已强制重建：此前已确认版本 v"
                 f"{prev_version} 的锁定不保留，请重新确认约束")
         total = int((time.monotonic() - t0) * 1000)
+        # 原计划（baseline）成本：逐路线独立重算，随任务结果透出，
+        # 作为低扰动参考成本与页面"原计划成本"标注的数据源
+        plan_cost, plan_route_details = evaluate_original_plan(scn)
         return {"scenario_id": scn.scenario_id, "version": scn.version,
                 "input_hash": input_hash(scn),
                 "n_routes": len(scn.original_plan.routes),
+                "plan_total_travel_time_s": plan_cost,
+                "plan_route_details": plan_route_details,
                 "requested_budget_ms": requested,
                 "materialize_ms": materialize_ms,
                 "total_elapsed_ms": total,
@@ -142,8 +148,12 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                 f"E_BUDGET: 物化后剩余预算 {remaining}ms 不足 1000ms，"
                 "请加大 budget_ms（超时≠无解）")
         method = payload["method"]
-        outcome = pipeline.solve(scn, method, remaining,
-                                 backend=payload.get("backend"))
+        # 低扰动参考链：Web 链路显式启用 baseline 原计划成本作为参考
+        # （opt-in；冻结评测脚本默认关闭，历史结果可复现）
+        outcome = pipeline.solve(
+            scn, method, remaining,
+            backend=payload.get("backend"),
+            use_baseline_reference=(method == "low_disruption"))
         result = outcome.result
         total = int((time.monotonic() - t0) * 1000)
         row = {
@@ -205,9 +215,11 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
                   "issues": issues}
         if mat_path.is_file():
             scn = Scenario(**json.loads(mat_path.read_text(encoding="utf-8")))
+            plan_cost, _ = evaluate_original_plan(scn)
             detail.update({"version": scn.version,
                            "input_hash": input_hash(scn),
-                           "n_plan_routes": len(scn.original_plan.routes)})
+                           "n_plan_routes": len(scn.original_plan.routes),
+                           "plan_total_travel_time_s": plan_cost})
         return detail
 
     @router.get("/scenarios/{scenario_id}/vizdata")
