@@ -63,6 +63,10 @@ REPORTS_FILES = [
     "reports/baseline300/results.json",
     "reports/baseline300/strategy_sweep.json",
     "reports/baseline300/summary.csv",
+    # 时间窗放宽演示（8 个 -loose 场景）：证实根因与系统可用性，独立成表
+    "reports/tw_relax_demo/README.md",
+    "reports/tw_relax_demo/results.json",
+    "reports/tw_relax_demo/summary.csv",
 ]
 
 # 高置信敏感模式：命中即拒绝打包（允许文档中出现 "api_key" 等单词，

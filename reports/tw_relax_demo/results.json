@@ -1,0 +1,390 @@
+{
+ "started_at": "2026-10-12T07:05:15.028008+00:00",
+ "budget_ms": 60000,
+ "scenarios": {
+  "r101-s101-loose": {
+   "origin": "r101-s101",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 5400,
+   "version": 1,
+   "materialize_ms": 15,
+   "plan_total_travel_time_s": 29159.0,
+   "n_plan_routes": 3,
+   "scenario_input_hash": "c92531f15cd71759772d1a5c0afdc0c38228979085b195a9e663da3d7bc4b96e",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 34030,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 31821,
+     "elapsed_ms": 0,
+     "backend": "ortools",
+     "validation_ok": true,
+     "solver_status": "ROUTING_OPTIMAL",
+     "wall_ms": 0
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 30557,
+     "elapsed_ms": 530,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 530
+    }
+   }
+  },
+  "r102-s101-loose": {
+   "origin": "r102-s101",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 5400,
+   "version": 1,
+   "materialize_ms": 0,
+   "plan_total_travel_time_s": 23630.0,
+   "n_plan_routes": 3,
+   "scenario_input_hash": "b9c77fe2ae594620e4aa292d87a8a52cc4160adaf573586c060e7f847d038f74",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 28535,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 29061,
+     "elapsed_ms": 15,
+     "backend": "ortools",
+     "validation_ok": true,
+     "solver_status": "ROUTING_OPTIMAL",
+     "wall_ms": 15
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 26401,
+     "elapsed_ms": 468,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 468
+    }
+   }
+  },
+  "r201-s102-loose": {
+   "origin": "r201-s102",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 5400,
+   "version": 1,
+   "materialize_ms": 15,
+   "plan_total_travel_time_s": 37157.0,
+   "n_plan_routes": 1,
+   "scenario_input_hash": "e277ae1462bb2fbcde1c2f593d56296cabfe4731cb85e2ed49de964553cc2ae0",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 38951,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 37106,
+     "elapsed_ms": 109,
+     "backend": "ortools",
+     "validation_ok": true,
+     "solver_status": "ROUTING_OPTIMAL",
+     "wall_ms": 109
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 38951,
+     "elapsed_ms": 1563,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 1563
+    }
+   }
+  },
+  "rc101-s201-loose": {
+   "origin": "rc101-s201",
+   "origin_split": "test",
+   "status": "OK",
+   "relax_s": 5400,
+   "version": 1,
+   "materialize_ms": 0,
+   "plan_total_travel_time_s": 33750.0,
+   "n_plan_routes": 3,
+   "scenario_input_hash": "94e912676e07f5e3d817aa4d2b6853280c56e9546a12f8d23bede72dce9170c6",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 39879,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 42976,
+     "elapsed_ms": 15,
+     "backend": "ortools",
+     "validation_ok": true,
+     "solver_status": "ROUTING_OPTIMAL",
+     "wall_ms": 15
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 36728,
+     "elapsed_ms": 2952,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 2952
+    }
+   }
+  },
+  "c101-s102-loose": {
+   "origin": "c101-s102",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 21600,
+   "version": 1,
+   "materialize_ms": 0,
+   "plan_total_travel_time_s": 31130.0,
+   "n_plan_routes": 2,
+   "scenario_input_hash": "857784f4b74ee9cd92f9b6716e4c20214ec5d404e2fecdbb9f959f9fcd99ec6d",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 32577,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "no_feasible_found",
+     "has_solution": false,
+     "total_travel_time_s": null,
+     "elapsed_ms": 15,
+     "backend": "ortools",
+     "validation_ok": null,
+     "solver_status": "ROUTING_FAIL",
+     "wall_ms": 15
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 32577,
+     "elapsed_ms": 797,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 797
+    },
+    "rebuild_copt_diag": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 28688,
+     "elapsed_ms": 2421,
+     "backend": "copt",
+     "validation_ok": true,
+     "solver_status": "MIP_OPTIMAL",
+     "wall_ms": 2421
+    }
+   }
+  },
+  "c102-s102-loose": {
+   "origin": "c102-s102",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 10800,
+   "version": 1,
+   "materialize_ms": 15,
+   "plan_total_travel_time_s": 24387.0,
+   "n_plan_routes": 2,
+   "scenario_input_hash": "81a3ad7abd224ac228fe484f2eab21eb52b5dd8713f1c0d3d4fd18b6ed8b13e8",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 27949,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "no_feasible_found",
+     "has_solution": false,
+     "total_travel_time_s": null,
+     "elapsed_ms": 0,
+     "backend": "ortools",
+     "validation_ok": null,
+     "solver_status": "ROUTING_FAIL",
+     "wall_ms": 0
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 27949,
+     "elapsed_ms": 61,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 61
+    },
+    "rebuild_copt_diag": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 24466,
+     "elapsed_ms": 1765,
+     "backend": "copt",
+     "validation_ok": true,
+     "solver_status": "MIP_OPTIMAL",
+     "wall_ms": 1765
+    }
+   }
+  },
+  "r101-s102-loose": {
+   "origin": "r101-s102",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 10800,
+   "version": 1,
+   "materialize_ms": 0,
+   "plan_total_travel_time_s": 25709.0,
+   "n_plan_routes": 2,
+   "scenario_input_hash": "802bb27bf48a24adaf3db4d30d2a1b7fba31bd04e45d790a4f9db9f686b2569e",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 25904,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "no_feasible_found",
+     "has_solution": false,
+     "total_travel_time_s": null,
+     "elapsed_ms": 15,
+     "backend": "ortools",
+     "validation_ok": null,
+     "solver_status": "ROUTING_FAIL",
+     "wall_ms": 15
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 25904,
+     "elapsed_ms": 561,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 561
+    },
+    "rebuild_copt_diag": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 20653,
+     "elapsed_ms": 35672,
+     "backend": "copt",
+     "validation_ok": true,
+     "solver_status": "MIP_OPTIMAL",
+     "wall_ms": 35672
+    }
+   }
+  },
+  "r102-s102-loose": {
+   "origin": "r102-s102",
+   "origin_split": "dev",
+   "status": "OK",
+   "relax_s": 10800,
+   "version": 1,
+   "materialize_ms": 14,
+   "plan_total_travel_time_s": 27300.0,
+   "n_plan_routes": 2,
+   "scenario_input_hash": "0d2c530a09170d64055d85ad56c4917196f6ba9a3c99753b0f90acbc3ba4ad19",
+   "methods": {
+    "insert": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 27810,
+     "elapsed_ms": 0,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 0
+    },
+    "rebuild": {
+     "status": "no_feasible_found",
+     "has_solution": false,
+     "total_travel_time_s": null,
+     "elapsed_ms": 14,
+     "backend": "ortools",
+     "validation_ok": null,
+     "solver_status": "ROUTING_FAIL",
+     "wall_ms": 14
+    },
+    "low_disruption": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 27810,
+     "elapsed_ms": 375,
+     "backend": null,
+     "validation_ok": true,
+     "solver_status": null,
+     "wall_ms": 375
+    },
+    "rebuild_copt_diag": {
+     "status": "feasible",
+     "has_solution": true,
+     "total_travel_time_s": 20509,
+     "elapsed_ms": 3969,
+     "backend": "copt",
+     "validation_ok": true,
+     "solver_status": "MIP_OPTIMAL",
+     "wall_ms": 3969
+    }
+   }
+  }
+ }
+}

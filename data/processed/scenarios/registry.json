@@ -586,6 +586,126 @@
    },
    "file": "scenarios/test/kilby-tai75d-s201.json",
    "draft_input_hash": "85692f456a011c5fc5f6b18e53d138c5fe69b7d2724655001e2edd451fe28448"
+  },
+  {
+   "scenario_id": "r101-s101-loose",
+   "base_instance": "R101",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "relaxed(+5400s)",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/demo/r101-s101-loose.json",
+   "draft_input_hash": "4de8926fad5d34ca5a5d9993ba0304ea1f7e1be8cd4549f009e9d8eb51fcdd15"
+  },
+  {
+   "scenario_id": "r102-s101-loose",
+   "base_instance": "R102",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "relaxed(+5400s)",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 101
+   },
+   "file": "scenarios/demo/r102-s101-loose.json",
+   "draft_input_hash": "6b5a3e641aa5dc1a1f9c283b213aea1e86bc8509feadd5fe892e54550560eb30"
+  },
+  {
+   "scenario_id": "r201-s102-loose",
+   "base_instance": "R201",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "relaxed(+5400s)",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/demo/r201-s102-loose.json",
+   "draft_input_hash": "97e1618a1eb20ddc59a8e536f37a5a6cb3757c368fb4eb69dfe3198d1a4575b9"
+  },
+  {
+   "scenario_id": "rc101-s201-loose",
+   "base_instance": "RC101",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 3,
+    "tw_tightness": "relaxed(+5400s)",
+    "vehicle_slack": "normal",
+    "lock_ratio": 0.2,
+    "seed": 201
+   },
+   "file": "scenarios/demo/rc101-s201-loose.json",
+   "draft_input_hash": "985421943096ce6f7d2640117d596043ea55e8c0c79c6516878616d84c582735"
+  },
+  {
+   "scenario_id": "c101-s102-loose",
+   "base_instance": "C101",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "relaxed(+21600s)",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/demo/c101-s102-loose.json",
+   "draft_input_hash": "ee349732ea2e339d0f0022e887a16b2e5d7867f41608ae72260c421b0bdf84d7"
+  },
+  {
+   "scenario_id": "c102-s102-loose",
+   "base_instance": "C102",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "relaxed(+10800s)",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/demo/c102-s102-loose.json",
+   "draft_input_hash": "8ed07cb020ce94d149b27ecf68880fef8c345a5389b73c81e235771af327ed96"
+  },
+  {
+   "scenario_id": "r101-s102-loose",
+   "base_instance": "R101",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "relaxed(+10800s)",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/demo/r101-s102-loose.json",
+   "draft_input_hash": "7be475d8828252c2c19589a4fb5f1c6e84418352c58b0ef081e0ac36a5a6c7bc"
+  },
+  {
+   "scenario_id": "r102-s102-loose",
+   "base_instance": "R102",
+   "split": "demo",
+   "config": {
+    "n_known": 15,
+    "n_new": 2,
+    "tw_tightness": "relaxed(+10800s)",
+    "vehicle_slack": "tight",
+    "lock_ratio": 0.5,
+    "seed": 102
+   },
+   "file": "scenarios/demo/r102-s102-loose.json",
+   "draft_input_hash": "7f37536e047b6df49f0369a9cc497bfb3b715f2e52765799cdbb6bbbe8989245"
   }
  ]
 }

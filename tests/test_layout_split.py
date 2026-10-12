@@ -35,7 +35,12 @@ def _layout_groups() -> dict[tuple, list[str]]:
 class TestLayoutAwareSplit:
     def test_no_layout_group_spans_dev_and_test(self):
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-        split_of = {s["base_instance"]: s["split"] for s in registry["scenarios"]}
+        # 只考察 dev/test 划分：demo 为时间窗放宽派生演示场景
+        # （scripts/make_tw_relaxed_demo.py，同布局的 -loose 副本），
+        # 不参与 dev/test 泛化划分一致性检查
+        split_of = {s["base_instance"]: s["split"]
+                    for s in registry["scenarios"]
+                    if s["split"] in ("dev", "test")}
         for sig, names in _layout_groups().items():
             sets = {split_of[n] for n in names}
             assert len(sets) == 1, (
