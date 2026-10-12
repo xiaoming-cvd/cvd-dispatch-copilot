@@ -141,6 +141,7 @@
         <input type="number" id="baselineBudget" value="60000" style="width:120px">
         <button id="btnBaseline">提交 baseline 任务</button>
       </div>
+      <div id="baselineResult" class="muted" style="margin-top:6px"></div>
     </div>
 
     <div class="card hidden" id="cardConstraints">
@@ -400,7 +401,16 @@ async function selectScenario(sid) {
         kv(dl, "原计划总成本（baseline）", d.plan_total_travel_time_s + " 模型秒"
            + "（逐路线独立重算；只含旧订单，是低扰动成本上限的参考基准）");
       }
+      /* baseline 卡片旁同步回显参考成本（不依赖任务列表 50 条窗口） */
+      const br = $("baselineResult");
+      br.className = "st-ok"; br.style.marginTop = "6px";
+      br.textContent = "v" + d.version + " · 原计划总成本（baseline 参考）："
+        + d.plan_total_travel_time_s + " 模型秒"
+        + "（逐路线独立重算，只含旧订单，是低扰动成本上限的参考基准）";
       $("solveBaseVersion").placeholder = "当前 v" + d.version;
+    } else {
+      $("baselineResult").textContent = "";
+      lastBaselineJob = null;
     }
     if (d.issues && d.issues.length) {
       const ul = document.createElement("ul");
@@ -420,6 +430,7 @@ async function selectScenario(sid) {
     p.textContent = "详情加载失败：" + e.message; issuesBox.appendChild(p);
   }
   loadScenarios();
+  refreshJobs();  // 同步 baseline 参考成本回显
 }
 
 /* ---------- 上传 ---------- */
@@ -758,6 +769,26 @@ $("btnSolveAll").onclick = async () => {
 
 /* ---------- 任务轮询 ---------- */
 let pollTimer = null;
+let lastBaselineJob = null;
+/* 把最近一次成功的 baseline 结果（原计划成本）回显到 baseline 卡片旁边 */
+async function showBaselineResult(jobId) {
+  const box = $("baselineResult");
+  try {
+    const d = await api("/api/jobs/" + encodeURIComponent(jobId) + "/result.json");
+    box.style.marginTop = "6px";
+    if (d.plan_total_travel_time_s != null) {
+      box.className = "st-ok";
+      box.textContent = "v" + d.version + " · 原计划总成本（baseline 参考）："
+        + d.plan_total_travel_time_s + " 模型秒 · 生成用时 "
+        + d.total_elapsed_ms + " ms（逐路线独立重算，只含旧订单，"
+        + "是低扰动成本上限的参考基准）";
+    } else {
+      box.className = "st-warn";
+      box.textContent = "baseline 已生成 v" + d.version
+        + "，但原计划成本未记录（可能为旧版任务）";
+    }
+  } catch (e) { box.textContent = ""; }
+}
 /* ISO 时间 → 浏览器本地时区显示（后端存 UTC，直接贴出来会差 8 小时） */
 function fmtTime(iso) {
   if (!iso) return "";
@@ -795,6 +826,17 @@ async function refreshJobs() {
       if (j.status === "queued" || j.status === "running") active++;
     }
     $("jobHint").textContent = data.jobs.length ? "" : "暂无任务";
+    /* baseline 参考成本回显：当前场景最近一次成功的 baseline 任务 */
+    const baseDone = data.jobs.filter(j => j.kind === "baseline"
+      && j.status === "succeeded" && j.payload
+      && j.payload.scenario_id === sel.scenario);
+    if (baseDone.length && baseDone[0].job_id !== lastBaselineJob) {
+      lastBaselineJob = baseDone[0].job_id;
+      showBaselineResult(baseDone[0].job_id);
+    } else if (!baseDone.length && lastBaselineJob) {
+      lastBaselineJob = null;
+      $("baselineResult").textContent = "";
+    }
     clearTimeout(pollTimer);
     pollTimer = setTimeout(refreshJobs, active ? 1500 : 6000);
   } catch (e) { clearTimeout(pollTimer); pollTimer = setTimeout(refreshJobs, 6000); }
