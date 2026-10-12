@@ -190,7 +190,11 @@
     <div class="card hidden" id="cardResult">
       <h2>结果</h2>
       <div class="notice hidden" id="laymanIntro"></div>
-      <dl class="kv" id="resultKv"></dl>
+      <div id="resultStatusLine" class="st-ok" style="font-weight:600;margin-bottom:6px"></div>
+      <details>
+        <summary class="muted" style="cursor:pointer">结果明细（任务 / 后端 / 预算 / 版本，点击展开）</summary>
+        <dl class="kv" id="resultKv"></dl>
+      </details>
       <div class="row" style="margin:8px 0">
         <button class="ghost sm" id="btnExportCsv">导出 CSV</button>
         <button class="ghost sm" id="btnExportJson">导出 JSON</button>
@@ -212,8 +216,11 @@
         <tbody></tbody>
       </table>
       <h2 style="margin-top:14px">求解器自报指标（仅供对照，以独立校验为准）</h2>
-      <pre id="metricsPre"></pre>
-      <h2 style="margin-top:14px">决策过程（事后回放 · 全部由真实运行记录生成，无大模型编造）</h2>
+      <details>
+        <summary class="muted" style="cursor:pointer">展开自报指标 JSON（点击展开）</summary>
+        <pre id="metricsPre"></pre>
+      </details>
+      <h2 style="margin-top:14px">决策过程（事后回放 · 全部由真实运行记录生成）</h2>
       <div class="procbox" id="storyBox"><h4>大白话：它到底干了什么</h4><div id="procStory"></div>
         <div id="procViz" style="margin-top:10px"></div></div>
       <div class="procbox"><h4>结论（口径与状态）</h4><div id="procSummary"></div></div>
@@ -799,6 +806,17 @@ async function loadResult(jobId) {
     lastResultData = d;
     const r = d.result || {};
     const m = r.metrics || {};
+    /* 关键结论常显一行（诚实性底线：状态/校验/可执行不可折叠隐藏） */
+    const indepOk = !!(r.validation && r.validation.independent_ok);
+    const stl = $("resultStatusLine");
+    stl.textContent = "结论：" + (d.has_solution
+        ? "找到可行解（总行驶 " + (m.total_travel_time_s ?? "?") + " 模型秒）"
+        : "未找到可行解（≠ 证明无解）")
+      + " · 求解状态 " + (r.status || "?")
+      + " · 独立校验 " + (indepOk ? "通过" : "未通过")
+      + " · " + (d.executable ? "可执行" : "不可执行（禁止导出执行）");
+    stl.className = indepOk && d.executable ? "st-ok" : "st-err";
+    stl.style.cssText = "font-weight:600;margin-bottom:6px";
     kv(dl, "任务", d.job_id);
     kv(dl, "方法 / 后端（请求）", d.method + " / " + (d.backend_requested || "-"));
     kv(dl, "数据基础 / 新增事件来源",
@@ -938,7 +956,7 @@ function renderCompare(original, routes) {
   }
 }
 
-/* ---------- 决策过程（事后回放：全部来自真实运行记录，无大模型编造） ---------- */
+/* ---------- 决策过程（事后回放：全部来自真实运行记录） ---------- */
 function renderProcess(d) {
   const r = d.result || {};
   const m = r.metrics || {};
