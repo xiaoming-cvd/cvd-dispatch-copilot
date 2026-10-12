@@ -195,7 +195,18 @@ def attach(app, settings: Settings, index: ScenarioIndex, queue: JobQueue,
 
     @router.get("/scenarios")
     def scenarios():
-        return {"scenarios": index.list()}
+        out = index.list()
+        # 原计划参考成本：已物化场景逐路线独立重算（毫秒级，供列表"事前参考"列）
+        for row in out:
+            row["plan_total_travel_time_s"] = None
+            if row.get("materialized"):
+                try:
+                    scn = index.load_scenario(row["scenario_id"])
+                    cost, _ = evaluate_original_plan(scn)
+                    row["plan_total_travel_time_s"] = cost
+                except (HTTPException, ValueError, KeyError, OSError):
+                    pass
+        return {"scenarios": out}
 
     @router.get("/scenarios/{scenario_id}")
     def scenario_detail(scenario_id: str):
